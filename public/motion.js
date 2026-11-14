@@ -1,0 +1,14 @@
+// Damped springs: immediate response, a restrained overshoot, then settlement.
+// Numeric springs preserve velocity when a slider changes its target mid-flight.
+const reduce=matchMedia('(prefers-reduced-motion: reduce)');
+const states=new WeakMap();
+export function springValue(el,target,format){let s=states.get(el);if(!s){s={x:target,v:0,target,frame:0};states.set(el,s);el.textContent=format(target);return;}s.target=target;if(reduce.matches){cancelAnimationFrame(s.frame);s.frame=0;s.x=target;s.v=0;el.textContent=format(target);return;}if(s.frame)return;let last=performance.now();function tick(now){const dt=Math.min((now-last)/1000,.032);last=now;const steps=4;for(let i=0;i<steps;i++){s.v+=(230*(s.target-s.x)-30*s.v)*dt/steps;s.x+=s.v*dt/steps;}el.textContent=format(s.x);if(Math.abs(s.target-s.x)<.1&&Math.abs(s.v)<.5){s.x=s.target;s.v=0;s.frame=0;el.textContent=format(s.target);return;}s.frame=requestAnimationFrame(tick);}s.frame=requestAnimationFrame(tick);}
+function samples(stiffness=280,damping=24){let x=0,v=0;const values=[];for(let i=0;i<=60;i++){values.push(x);for(let j=0;j<4;j++){v+=(stiffness*(1-x)-damping*v)/240;x+=v/240;}}values[60]=1;return values;}
+const curve=samples();
+export function springIn(el){if(reduce.matches)return;el.animate(curve.map((v,i)=>({transform:`translateY(${(1-v)*20}px) scale(${.96+.04*v})`,opacity:Math.min(1,i/8),offset:i/60})),{duration:620,easing:'linear'});}
+export function movePill(group){const pill=group?.querySelector('.pace-lens'),active=group?.querySelector('.selected');if(!pill||!active)return;const x=active.offsetLeft,w=active.offsetWidth;const previous=Number(pill.dataset.x??x);pill.style.width=w+'px';pill.style.transform=`translateX(${x}px)`;pill.dataset.x=x;if(!reduce.matches&&previous!==x)pill.animate(curve.map((v,i)=>({transform:`translateX(${previous+(x-previous)*v}px) scaleX(${1+.1*Math.sin(Math.PI*v)})`,offset:i/60})),{duration:560,easing:'linear'});}
+window.addEventListener('resize',()=>document.querySelectorAll('.segmented').forEach(movePill));
+document.addEventListener('pointerdown',e=>{const b=e.target.closest('button,.glass-nav a');if(b&&!reduce.matches)b.animate([{transform:'scale(1)'},{transform:'scale(.95)'}],{duration:100,fill:'forwards'});});
+for(const event of ['pointerup','pointercancel'])document.addEventListener(event,()=>{document.querySelectorAll('button,.glass-nav a').forEach(b=>{if(b.getAnimations().length){b.getAnimations().forEach(a=>a.cancel());if(!reduce.matches)b.animate(curve.map((v,i)=>({transform:`scale(${.95+.05*v})`,offset:i/60})),{duration:500});}});});
+const sections=new IntersectionObserver(entries=>{for(const e of entries)if(e.isIntersecting){document.querySelectorAll('.glass-nav a').forEach(a=>a.classList.toggle('active',a.hash==='#'+e.target.id));}},{rootMargin:'-10% 0px -60% 0px'});
+for(const id of ['overview','income','expenses-section','saving']){const el=document.getElementById(id);if(el)sections.observe(el);}
