@@ -24,3 +24,9 @@ main{max-width:900px;margin-left:auto;margin-right:auto;padding:24px 24px 40px}.
 .range-control:is(.is-dragging,:has(>input:focus-visible)) .range-thumb{width:56px;height:36px;border:0;backdrop-filter:none;-webkit-backdrop-filter:none;background:linear-gradient(140deg,#d3e7ff18,#7fbaff05 45%,#ffffff12)}
 .lens-optics{transition:opacity .08s}.range-control:is(.is-dragging,:has(>input:focus-visible)) .lens-optics{opacity:1}
 @media(prefers-reduced-transparency:reduce){.range-control:is(.is-dragging,:has(>input:focus-visible)) .range-thumb{background:#f0f5ff}}
+/* The glass material itself indicates keyboard focus without an outer halo. */
+.range-control input[type=range]:focus-visible,.range-control input:focus-visible~.range-thumb{outline:none;outline-offset:0}
+.summary-top{flex-wrap:nowrap}
+#planName{flex:1 1 190px;min-width:0;max-width:100%;width:190px;margin-left:-8px;padding:6px 8px;border-radius:9px;outline:none;box-shadow:inset 0 0 0 1px transparent;transition:background .18s,box-shadow .18s}
+#planName:focus,#planName:focus-visible{outline:none;background:#07172c30;box-shadow:inset 0 0 0 1px #c7e2ff70}
+#saveStatus{flex:none}
