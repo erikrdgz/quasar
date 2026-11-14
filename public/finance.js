@@ -1,5 +1,5 @@
 export const uid=()=>globalThis.crypto.randomUUID();
-export function blank(){return {id:uid(),name:'My plan',salary:0,other:0,famli:true,car:0,goals:[],expenses:['Rent','Food','Phone','Xcel','Legal'].map(name=>({id:uid(),name,amount:0}))};}
+export function blank(){return {id:uid(),name:'My plan',salary:130000,other:0,famli:true,car:0,goals:[],expenses:[['Rent',375],['Food',400],['Phone',200],['Xcel',100],['Legal',260]].map(([name,amount])=>({id:uid(),name,amount}))};}
 export function taxes(salary,famli=true){
  const income=Math.max(0,salary), taxable=Math.max(0,income-16100);
  const brackets=[[12400,.1],[50400,.12],[105700,.22],[201775,.24],[256225,.32],[640600,.35],[Infinity,.37]];

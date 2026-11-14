@@ -5,7 +5,7 @@ A black, mobile-friendly financial planner. Static HTML, CSS and JavaScript, no 
 `npm start`, then open http://127.0.0.1:4173. Run `npm test` for financial calculations and input validation.
 
 ## Plans and privacy
-Plans save automatically to localStorage on each device. Export/import JSON moves plans between devices. Clearing browser storage removes plans. JSON backups contain personal information. The ignored `private/` directory holds local-only setup; only `public/` is deployed. The public app starts empty and contains no personal amounts.
+Plans save automatically to localStorage on each device. Export/import JSON moves plans between devices. Clearing browser storage removes plans. JSON backups contain personal information. The ignored `private/` directory holds local-only setup; only `public/` is deployed. The public app includes the requested default salary and expenses. Every new scenario starts from these presets; saved customizations remain on the device.
 
 ## Phone installation
 Open the hosted URL in Safari → Share → Add to Home Screen (iPhone), or Chrome → Install app (Android). Open the installed app and import your private starter file or a backup. Offline mode is available after the first load. Browser and installed-app storage may differ.
