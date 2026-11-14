@@ -1,4 +1,4 @@
-import {calculate} from './finance.js';
+import {calculate,carPriceRange,CAR_PRICE_ASSUMPTIONS} from './finance.js?v=17';
 const cash=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
 const ink=[28,36,50],muted=[101,112,128],blue=[58,102,165],sand=[145,117,77],teal=[57,127,116],purple=[123,98,157];
 const plain=s=>Array.isArray(s)?s.map(plain):String(s).replace(/[\u2010-\u2015]/g,'-').replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"');
@@ -18,7 +18,7 @@ export async function createPlanPdf(plan){
  doc.setFontSize(16);const nameLines=doc.splitTextToSize(plain(plan.name),right-margin);text(nameLines,margin,y,16,ink,'bold');y+=nameLines.length*6.5+7;
  doc.setFillColor(238,244,252);doc.roundedRect(margin,y,right-margin,36,4,4,'F');
  text('Left to spend each month',margin+6,y+8,10,muted);text(cash(c.left),margin+6,y+22,26,blue,'bold');text(`${cash(c.left*12/52)} / week`,right-6,y+21,10,blue,'normal',{align:'right'});y+=47;
- row('Annual income',cash(plan.salary),blue);row('Monthly take-home',cash(c.net),blue);row('Monthly essentials',cash(c.expenses),sand);row('Car budget per month',cash(plan.car),teal);row('Goal contributions per month',cash(c.savings),purple);row('Left to spend per year',cash(c.left*12),blue);
+ row('Annual income',cash(plan.salary),blue);row('Monthly take-home',cash(c.net),blue);row('Monthly essentials',cash(c.expenses),sand);row('Car budget per month',cash(plan.car),teal);if(plan.car>0){const range=carPriceRange(plan.car);row('Estimated car price',`${cash(range.low)} - ${cash(range.high)}`,teal);room(9);text(CAR_PRICE_ASSUMPTIONS,margin,y,8,muted);y+=9;}row('Goal contributions per month',cash(c.savings),purple);row('Left to spend per year',cash(c.left*12),blue);
  section('Monthly essentials',sand);
  if(plan.expenses.length)for(const expense of plan.expenses)row(expense.name,cash(expense.amount),sand);else row('No expenses',cash(0),sand);
  if(c.goals.length){section('Savings goals',purple);for(const goal of c.goals){

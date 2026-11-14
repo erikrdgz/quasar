@@ -23,3 +23,8 @@ export function validatePlan(p){
 // Caps use cents and round down so input can never cross the available balance.
 export function spendingLimit(p,id){const c=calculate(p);const own=id==='car'?p.car:(p.expenses.find(e=>e.id===id)?.amount||0);return Math.max(0,Math.floor((c.net-c.expenses-p.car+own+1e-8)*100)/100);}
 export function minimumSalary(p){const required=(p.other+p.car+p.expenses.reduce((n,e)=>n+e.amount,0))*12;let low=0,high=1000000;for(let i=0;i<60;i++){const mid=(low+high)/2;if(mid-taxes(mid,p.famli).total>=required)high=mid;else low=mid;}return Math.ceil(high-1e-7);}
+// Illustrative purchase-price estimate: 60 months, 6-10% APR, no down payment.
+// Taxes and fees are not financed in this estimate.
+export const CAR_PRICE_ASSUMPTIONS='60 months · 6–10% APR · $0 down · before tax & fees';
+export function loanPrincipal(payment,apr,months){const rate=apr/12;return rate===0?payment*months:payment*(-Math.expm1(-months*Math.log1p(rate)))/rate;}
+export function carPriceRange(payment){const monthly=Number.isFinite(payment)?Math.max(0,payment):0;return {low:Math.floor(loanPrincipal(monthly,.10,60)/100)*100,high:Math.floor(loanPrincipal(monthly,.06,60)/100)*100};}

@@ -1,9 +1,9 @@
-import {setupCategories,updateCategoryTotals} from './categories.js?v=16';
-import {icon} from './icons.js?v=16';
-import {syncRange} from './sliders.js?v=16';
-import {attachSwipe} from './swipe.js?v=16';
-import {springValue, springIn, movePill} from './motion.js?v=16';
-import {blank,uid,calculate,validatePlan,spendingLimit,minimumSalary} from './finance.js';
+import {setupCategories,updateCategoryTotals} from './categories.js?v=17';
+import {icon} from './icons.js?v=17';
+import {syncRange} from './sliders.js?v=17';
+import {attachSwipe} from './swipe.js?v=17';
+import {springValue, springIn, movePill} from './motion.js?v=17';
+import {blank,uid,calculate,validatePlan,spendingLimit,minimumSalary,carPriceRange,CAR_PRICE_ASSUMPTIONS} from './finance.js?v=17';
 const $=id=>document.getElementById(id),money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const KEY='room-plans-v1';let plans=[],current,storageError=false;
 try{const stored=JSON.parse(localStorage.getItem(KEY));if(stored?.plans?.length){plans=stored.plans.map(p=>({...validatePlan(p),id:p.id}));current=plans.find(p=>p.id===stored.current)||plans[0];}}catch{storageError=true;}
@@ -19,7 +19,7 @@ function refreshLimits(){const floor=minimumSalary(current),salaryMin=Math.ceil(
  for(const e of current.expenses){const row=document.querySelector(`[data-expense="${e.id}"]`),max=spendingLimit(current,e.id);if(!row)continue;const input=row.querySelector('input[type="number"]'),range=row.querySelector('input[type="range"]');input.max=max;input.value=e.amount;range.max=Math.floor(max);range.value=e.amount;row.querySelector('.spending-max').textContent=money(max);syncRange(range);}
  for(const g of current.goals){const row=document.querySelector(`[data-goal="${g.id}"]`);if(!row)continue;for(const field of ['target','saved']){const input=row.querySelector(`input[type="number"][data-field="${field}"]`),range=row.querySelector(`input[type="range"][data-field="${field}"]`);input.value=g[field];input.min=field==='target'?g.saved:0;input.max=field==='saved'?g.target:1e7;range.min=input.min;range.max=field==='target'?Math.max(100000,g.target):g.target;range.value=g[field];syncRange(range);}}
 }
-function update(){const c=calculate(current);updateCategoryTotals(current,c,money);$('expenseTotal').textContent=money(c.expenses);springValue($('left'),c.left,money);$('leftLabel').textContent=c.left<0?'Over budget each month':'Left to spend each month';$('weekly').textContent=c.left>=0?`${money(c.left*12/52)} / week`:`Reduce spending by ${money(-c.left)} to balance this plan.`;document.body.classList.toggle('negative',c.left<0);
+function update(){const c=calculate(current);const carPrice=carPriceRange(current.car);$('carPriceRange').textContent=current.car>0?`${money(carPrice.low)}–${money(carPrice.high)}`:money(0);$('carPriceAssumptions').textContent=CAR_PRICE_ASSUMPTIONS;updateCategoryTotals(current,c,money);$('expenseTotal').textContent=money(c.expenses);springValue($('left'),c.left,money);$('leftLabel').textContent=c.left<0?'Over budget each month':'Left to spend each month';$('weekly').textContent=c.left>=0?`${money(c.left*12/52)} / week`:`Reduce spending by ${money(-c.left)} to balance this plan.`;document.body.classList.toggle('negative',c.left<0);
  for(const [id,n]of Object.entries({net:c.net,essentials:-c.expenses,carOut:-current.car,savings:-c.savings,annual:c.left*12}))$(id).textContent=money(n);
  const denom=Math.max(c.net,c.expenses+current.car+c.savings,1);$('allocation').innerHTML=[[c.expenses,'var(--essentials-color)'],[current.car,'var(--car-color)'],[c.savings,'var(--goals-color)'],[Math.max(0,c.left),'#2979ff']].map(([n,color])=>`<span style="width:${n/denom*100}%;background:${color}"></span>`).join('');
  $('budgetMessage').textContent=c.left<0?'This plan spends more than your take-home pay. Goal contributions are paused.':'';
@@ -50,7 +50,7 @@ function showPlans(){modal('Plans',`<button class="primary new-plan-button" data
 function deletePlan(id){const index=plans.findIndex(p=>p.id===id);if(index<0)return;const deleted=plans[index],wasCurrent=current.id===id;plans.splice(index,1);if(!plans.length)plans=[blank()];if(wasCurrent)current=plans[0];document.querySelector(`[data-plan="${id}"]`)?.remove();render();if($('modal').open)showPlans();let restored=false;const undo=document.createElement('button');undo.innerHTML=icon('undo')+' Undo';undo.onclick=()=>{if(restored)return;restored=true;plans.splice(Math.min(index,plans.length),0,deleted);if(wasCurrent)current=deleted;render();if($('modal').open)showPlans();toast('Plan restored');};if($('modal').open){const notice=document.createElement('div');notice.className='undo-inline';notice.setAttribute('role','status');notice.append(document.createTextNode('Plan deleted'),undo);$('modalBody').append(notice);}else{clearTimeout(toast.timer);$('toast').replaceChildren(document.createTextNode('Plan deleted '),undo);$('toast').style.display='block';toast.timer=setTimeout(()=>$('toast').style.display='none',8000);}}
 $('plansButton').onclick=showPlans;
 $('modalBody').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.exportPlan){exportPlan(b.dataset.exportPlan);return;}if(b.dataset.deletePlan){const row=document.querySelector(`[data-plan="${b.dataset.deletePlan}"]`);row.nextElementSibling.hidden=true;planSwipeControls.get(row)?.remove();return;}if(b.dataset.newPlan){createPlan();return;}if(b.dataset.load){current=plans.find(p=>p.id===b.dataset.load);render();$('modal').close();}};
-async function exportPlan(id){const plan=plans.find(p=>p.id===id);if(!plan)return;const button=document.querySelector(`[data-export-plan="${id}"]`);if(button)button.disabled=true;try{const {downloadPlanPdf}=await import('./plan-pdf.js?v=16');await downloadPlanPdf(structuredClone(plan));}catch{toast('Could not create the PDF. Try again.');}finally{if(button)button.disabled=false;}}
+async function exportPlan(id){const plan=plans.find(p=>p.id===id);if(!plan)return;const button=document.querySelector(`[data-export-plan="${id}"]`);if(button)button.disabled=true;try{const {downloadPlanPdf}=await import('./plan-pdf.js?v=17');await downloadPlanPdf(structuredClone(plan));}catch{toast('Could not create the PDF. Try again.');}finally{if(button)button.disabled=false;}}
 document.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=icon(el.dataset.icon));
 setupCategories();
 render();

@@ -75,3 +75,4 @@ button,a,input{-webkit-tap-highlight-color:transparent}
 @media(max-width:800px),(pointer:coarse){
  #planName,.expense-name,.expense-item .money-input input,.goal-fields input[type=number]{font-size:16px}
 }
+.car-price-estimate{display:grid;gap:7px;margin-top:22px}.car-price-label{font-size:13px;color:#a8b9b9}.car-price-estimate output{font-size:25px;letter-spacing:-.7px;line-height:1.2;color:var(--car-color);font-variant-numeric:tabular-nums}.car-price-estimate p{margin:0;font-size:11px;line-height:1.6;color:#879c9b;max-width:100%}

@@ -1,4 +1,4 @@
-import {icon} from './icons.js?v=16';
+import {icon} from './icons.js?v=17';
 let closed={income:true,'car-section':true,'expenses-section':true,saving:true};
 const toggles=new Map();
 const definitions=[['income','Annual income'],['car-section','Car budget'],['expenses-section','Monthly essentials'],['saving','Save up for']];

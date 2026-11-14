@@ -30,3 +30,6 @@ The slider's glass lens renders a synchronized SVG projection of the track, stre
 Icons: Font Awesome Free 7.3.1. Attribution and licenses are bundled in public/fontawesome-LICENSE.txt; https://fontawesome.com/.
 
 PDF export: jsPDF 4.2.1, MIT license in public/jspdf-LICENSE.txt. All PDF generation happens on the device.
+
+## Car price estimate
+The car card and PDF reverse the amortized-loan payment formula to show an illustrative purchase-price range. Assumptions: 60 monthly payments, 6-10% APR, zero down, and taxes/fees paid separately. Rates are modeling assumptions, not live lender quotes. Values round down to the nearest $100. A zero monthly budget shows $0. Loan-term and price factors: https://www.consumerfinance.gov/ask-cfpb/how-much-can-i-afford-to-borrow-for-a-car-or-auto-loan-en-751/.
