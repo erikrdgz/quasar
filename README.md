@@ -33,3 +33,6 @@ PDF export: jsPDF 4.2.1, MIT license in public/jspdf-LICENSE.txt. All PDF genera
 
 ## Car price estimate
 The car card and PDF reverse the amortized-loan payment formula to show an illustrative purchase-price range. Assumptions: 60 monthly payments, 6-10% APR, zero down, and taxes/fees paid separately. Rates are modeling assumptions, not live lender quotes. Values round down to the nearest $100. A zero monthly budget shows $0. Loan-term and price factors: https://www.consumerfinance.gov/ask-cfpb/how-much-can-i-afford-to-borrow-for-a-car-or-auto-loan-en-751/.
+
+## Goal editing
+Goals default to compact swipeable sub-cards with their name and target total. The pencil opens one editor at a time; the check button confirms a compact view. Adding a goal focuses its name and scrolls its editor beneath the sticky header. Goal sub-cards share the saved-plan swipe thresholds, detached Delete button and animated removal. Undo restores a deleted goal to its original position.
