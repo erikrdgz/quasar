@@ -1,8 +1,8 @@
-import {setupCategories,updateCategoryTotals} from './categories.js?v=14';
-import {icon} from './icons.js?v=14';
-import {syncRange} from './sliders.js?v=14';
-import {attachSwipe} from './swipe.js?v=14';
-import {springValue, springIn, movePill} from './motion.js?v=14';
+import {setupCategories,updateCategoryTotals} from './categories.js?v=15';
+import {icon} from './icons.js?v=15';
+import {syncRange} from './sliders.js?v=15';
+import {attachSwipe} from './swipe.js?v=15';
+import {springValue, springIn, movePill} from './motion.js?v=15';
 import {blank,uid,calculate,validatePlan,spendingLimit,minimumSalary} from './finance.js';
 const $=id=>document.getElementById(id),money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const KEY='room-plans-v1';let plans=[],current,storageError=false;
@@ -48,7 +48,7 @@ function showPlans(){modal('Plans',`<button class="primary new-plan-button" data
 function deletePlan(id){const index=plans.findIndex(p=>p.id===id);if(index<0)return;const deleted=plans[index],wasCurrent=current.id===id;plans.splice(index,1);if(!plans.length)plans=[blank()];if(wasCurrent)current=plans[0];document.querySelector(`[data-plan="${id}"]`)?.remove();render();if($('modal').open)showPlans();let restored=false;const undo=document.createElement('button');undo.innerHTML=icon('undo')+' Undo';undo.onclick=()=>{if(restored)return;restored=true;plans.splice(Math.min(index,plans.length),0,deleted);if(wasCurrent)current=deleted;render();if($('modal').open)showPlans();toast('Plan restored');};if($('modal').open){const notice=document.createElement('div');notice.className='undo-inline';notice.setAttribute('role','status');notice.append(document.createTextNode('Plan deleted'),undo);$('modalBody').append(notice);}else{clearTimeout(toast.timer);$('toast').replaceChildren(document.createTextNode('Plan deleted '),undo);$('toast').style.display='block';toast.timer=setTimeout(()=>$('toast').style.display='none',8000);}}
 $('plansButton').onclick=showPlans;
 $('modalBody').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.exportPlan){exportPlan(b.dataset.exportPlan);return;}if(b.dataset.deletePlan){const row=document.querySelector(`[data-plan="${b.dataset.deletePlan}"]`);row.nextElementSibling.hidden=true;planSwipeControls.get(row)?.remove();return;}if(b.dataset.newPlan){createPlan();return;}if(b.dataset.load){current=plans.find(p=>p.id===b.dataset.load);render();$('modal').close();}};
-async function exportPlan(id){const plan=plans.find(p=>p.id===id);if(!plan)return;const button=document.querySelector(`[data-export-plan="${id}"]`);if(button)button.disabled=true;try{const {downloadPlanPdf}=await import('./plan-pdf.js?v=14');await downloadPlanPdf(structuredClone(plan));}catch{toast('Could not create the PDF. Try again.');}finally{if(button)button.disabled=false;}}
+async function exportPlan(id){const plan=plans.find(p=>p.id===id);if(!plan)return;const button=document.querySelector(`[data-export-plan="${id}"]`);if(button)button.disabled=true;try{const {downloadPlanPdf}=await import('./plan-pdf.js?v=15');await downloadPlanPdf(structuredClone(plan));}catch{toast('Could not create the PDF. Try again.');}finally{if(button)button.disabled=false;}}
 document.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=icon(el.dataset.icon));
 setupCategories();
 render();
