@@ -10,5 +10,3 @@ export function movePill(group){const pill=group?.querySelector('.pace-lens'),ac
 window.addEventListener('resize',()=>document.querySelectorAll('.segmented').forEach(movePill));
 document.addEventListener('pointerdown',e=>{const b=e.target.closest('button,.glass-nav a');if(b&&!reduce.matches)b.animate([{transform:'scale(1)'},{transform:'scale(.95)'}],{duration:100,fill:'forwards'});});
 for(const event of ['pointerup','pointercancel'])document.addEventListener(event,()=>{document.querySelectorAll('button,.glass-nav a').forEach(b=>{if(b.getAnimations().length){b.getAnimations().forEach(a=>a.cancel());if(!reduce.matches)b.animate(curve.map((v,i)=>({transform:`scale(${.95+.05*v})`,offset:i/60})),{duration:500});}});});
-const sections=new IntersectionObserver(entries=>{for(const e of entries)if(e.isIntersecting){document.querySelectorAll('.glass-nav a').forEach(a=>a.classList.toggle('active',a.hash==='#'+e.target.id));}},{rootMargin:'-10% 0px -60% 0px'});
-for(const id of ['overview','income','expenses-section','saving']){const el=document.getElementById(id);if(el)sections.observe(el);}

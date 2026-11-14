@@ -1,4 +1,4 @@
-# Room
+# Quasar
 A black, mobile-friendly financial planner. Static HTML, CSS and JavaScript, no dependencies, accounts, analytics, or backend.
 
 ## Run locally
