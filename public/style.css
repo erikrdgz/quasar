@@ -70,3 +70,8 @@ button,a,input{-webkit-tap-highlight-color:transparent}
 .swipe-row,.swipe-row.swipe-open{background:transparent}
 .swipe-delete{bottom:auto;border-radius:18px;padding:8px;overflow:hidden;background:#e94c46;box-shadow:inset 0 1px 0 #ffffff1c}
 .swipe-delete:hover{background:#ef5851}.swipe-armed .swipe-delete{background:#e43c35}
+/* iPhone Safari zooms smaller editable text on focus. Keep mobile fields at
+   a readable size while preserving the larger income and car amounts. */
+@media(max-width:800px),(pointer:coarse){
+ #planName,.expense-name,.expense-item .money-input input,.goal-fields input[type=number]{font-size:16px}
+}
