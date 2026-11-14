@@ -25,6 +25,6 @@ All cards use a single full-width column. Monetary inputs have keyboard-accessib
 
 Saved-plan rows reveal Delete after a 48px left swipe and commit deletion after 72% of the row width (minimum 180px). Vertical scrolling and cancelled gestures never delete. Row removal slides out then collapses. Delete options and keyboard controls provide non-gesture alternatives, and Undo restores a removed plan.
 
-The slider's glass lens renders a synchronized SVG projection of the track, narrowing it gently beneath the pill. The straight track is masked inside the lens so it cannot show through the distortion. Direct geometry keeps the effect consistent in Safari and Chromium; CSS supplies highlights and reduced-transparency fallbacks. Native range elements retain keyboard and screen-reader behavior.
+The slider's glass lens renders a synchronized SVG projection of the track, stretching it locally at the left edge with a rounded blue endpoint in the center. The straight track is masked inside the lens so it cannot show through the distortion. Direct geometry keeps the effect consistent in Safari and Chromium; CSS supplies highlights and reduced-transparency fallbacks. Native range elements retain keyboard and screen-reader behavior. Glass appears only during pointer or keyboard adjustment, returning to white on release.
 
 Icons: Font Awesome Free 7.3.1. Attribution and licenses are bundled in public/fontawesome-LICENSE.txt; https://fontawesome.com/.
