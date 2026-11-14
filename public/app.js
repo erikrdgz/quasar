@@ -1,5 +1,5 @@
 import {icon} from './icons.js';
-import {syncRange} from './sliders.js?v=9';
+import {syncRange} from './sliders.js?v=10';
 import {attachSwipe} from './swipe.js';
 import {springValue, springIn, movePill} from './motion.js';
 import {blank,uid,calculate,validatePlan,spendingLimit,minimumSalary} from './finance.js';
