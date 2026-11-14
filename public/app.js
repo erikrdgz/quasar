@@ -1,7 +1,7 @@
 import {icon} from './icons.js';
-import {syncRange} from './sliders.js?v=11';
+import {syncRange} from './sliders.js?v=12';
 import {attachSwipe} from './swipe.js';
-import {springValue, springIn, movePill} from './motion.js?v=11';
+import {springValue, springIn, movePill} from './motion.js?v=12';
 import {blank,uid,calculate,validatePlan,spendingLimit,minimumSalary} from './finance.js';
 const $=id=>document.getElementById(id),money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const KEY='room-plans-v1';let plans=[],current,storageError=false;
@@ -20,7 +20,7 @@ function refreshLimits(){const floor=minimumSalary(current),salaryMax=Math.max(3
 }
 function update(){const c=calculate(current);$('expenseTotal').textContent=money(c.expenses);springValue($('left'),c.left,money);$('leftLabel').textContent=c.left<0?'Over budget each month':'Left to spend each month';$('weekly').textContent=c.left>=0?`${money(c.left*12/52)} / week`:`Reduce spending by ${money(-c.left)} to balance this plan.`;document.body.classList.toggle('negative',c.left<0);
  for(const [id,n]of Object.entries({net:c.net,essentials:-c.expenses,carOut:-current.car,savings:-c.savings,annual:c.left*12}))$(id).textContent=money(n);
- const denom=Math.max(c.net,c.expenses+current.car+c.savings,1);$('allocation').innerHTML=[[c.expenses,'#566681'],[current.car,'#27d8ff'],[c.savings,'#b198ff'],[Math.max(0,c.left),'#2979ff']].map(([n,color])=>`<span style="width:${n/denom*100}%;background:${color}"></span>`).join('');
+ const denom=Math.max(c.net,c.expenses+current.car+c.savings,1);$('allocation').innerHTML=[[c.expenses,'var(--essentials-color)'],[current.car,'var(--car-color)'],[c.savings,'var(--goals-color)'],[Math.max(0,c.left),'#2979ff']].map(([n,color])=>`<span style="width:${n/denom*100}%;background:${color}"></span>`).join('');
  $('budgetMessage').textContent=c.left<0?'This plan spends more than your take-home pay. Goal contributions are paused.':'';
  for(const g of c.goals){const el=document.querySelector(`[data-result="${g.id}"]`);if(el){const months=g.months;let when=months===0?'Goal reached':months===null?'Needs available income':months>1200?'More than 100 years':`${months} month${months===1?'':'s'} · ${new Date(new Date().getFullYear(),new Date().getMonth()+months,1).toLocaleDateString('en-US',{month:'short',year:'numeric'})}`;el.innerHTML=`<span>${money(g.monthly)} / month</span><span>${when}</span>`;document.querySelector(`[data-progress="${g.id}"]`).style.width=`${g.target>0?Math.min(100,g.saved/g.target*100):100}%`;}}
  refreshLimits();slider('salarySlider',current.salary);slider('carSlider',current.car);persist();}
