@@ -1,4 +1,4 @@
-import {calculate,carPriceRange,CAR_PRICE_ASSUMPTIONS} from './finance.js?v=18';
+import {calculate,carPriceRange,CAR_PRICE_ASSUMPTIONS} from './finance.js?v=19';
 const cash=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
 const ink=[28,36,50],muted=[101,112,128],blue=[58,102,165],sand=[145,117,77],teal=[57,127,116],purple=[123,98,157];
 const plain=s=>Array.isArray(s)?s.map(plain):String(s).replace(/[\u2010-\u2015]/g,'-').replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"');
