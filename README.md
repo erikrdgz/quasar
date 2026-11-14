@@ -19,3 +19,12 @@ Slow/medium/fast allocate 10%/25%/40% of money remaining after expenses and car.
 
 ## Deploy
 GitHub Actions tests and publishes only `public/` to GitHub Pages. Enable Pages with GitHub Actions as the source. Relative asset paths support a repository subdirectory. `manifest.webmanifest` and the service worker enable installation and offline use. Increase the cache version in `public/sw.js` when changing the offline asset list.
+
+## Controls
+All cards use a single full-width column. Monetary inputs have keyboard-accessible native range controls with a separate visual lens. Salary has a floor equal to the gross pay needed to cover the current monthly bills and car; expenses and car have dynamic ceilings from available take-home. Savings targets and already-saved balances are goal amounts, not monthly spending, and remain independent of these spending ceilings. Previously saved over-budget plans remain visible for correction; new over-budget imports are rejected.
+
+Saved-plan rows reveal Delete after a 48px left swipe and commit deletion after 72% of the row width (minimum 180px). Vertical scrolling and cancelled gestures never delete. Row removal slides out then collapses. Delete options and keyboard controls provide non-gesture alternatives, and Undo restores a removed plan.
+
+The slider's glass lens uses an SVG displacement filter over a synchronized copy of the underlying track, with a convex refraction map (index 1.48). This avoids Safari's SVG backdrop-filter limitation. CSS supplies material highlights and reduced-transparency fallbacks; native range elements retain keyboard and screen-reader behavior. No claim of native Apple material rendering is made.
+
+Icons: Font Awesome Free 7.3.1. Attribution and licenses are bundled in public/fontawesome-LICENSE.txt; https://fontawesome.com/.

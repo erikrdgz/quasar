@@ -20,3 +20,6 @@ export function validatePlan(p){
  for(const g of p.goals)if(typeof g.name!=='string'||g.name.length>80||!number(g.target)||!number(g.saved)||!['slow','medium','fast'].includes(g.pace))throw Error('Invalid savings goal.');
  return {...p,id:uid(),expenses:p.expenses.map(e=>({...e,id:uid()})),goals:p.goals.map(g=>({...g,id:uid()}))};
 }
+// Caps use cents and round down so input can never cross the available balance.
+export function spendingLimit(p,id){const c=calculate(p);const own=id==='car'?p.car:(p.expenses.find(e=>e.id===id)?.amount||0);return Math.max(0,Math.floor((c.net-c.expenses-p.car+own+1e-8)*100)/100);}
+export function minimumSalary(p){const required=(p.other+p.car+p.expenses.reduce((n,e)=>n+e.amount,0))*12;let low=0,high=1000000;for(let i=0;i<60;i++){const mid=(low+high)/2;if(mid-taxes(mid,p.famli).total>=required)high=mid;else low=mid;}return Math.ceil(high-1e-7);}
