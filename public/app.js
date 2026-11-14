@@ -1,7 +1,7 @@
 import {icon} from './icons.js';
-import {syncRange} from './sliders.js?v=10';
+import {syncRange} from './sliders.js?v=11';
 import {attachSwipe} from './swipe.js';
-import {springValue, springIn, movePill} from './motion.js';
+import {springValue, springIn, movePill} from './motion.js?v=11';
 import {blank,uid,calculate,validatePlan,spendingLimit,minimumSalary} from './finance.js';
 const $=id=>document.getElementById(id),money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const KEY='room-plans-v1';let plans=[],current,storageError=false;
