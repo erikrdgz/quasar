@@ -8,8 +8,8 @@
 //   • the app behind, which recedes and dims.
 // Geometry is always measured with the app unscaled, and a close that interrupts
 // an open reverses from wherever the card is at that moment.
-import {icon} from './icons.js?v=32';
-import {reduceMotion} from './motion.js?v=32';
+import {icon} from './icons.js?v=33';
+import {reduceMotion} from './motion.js?v=33';
 
 // iOS-style spring described by response (seconds) and damping ratio.
 function spring(response, dampingRatio) {
@@ -52,7 +52,9 @@ function cloneTile(tile, rect) {
 
 /**
  * @param origin  the tapped tile (data-tile lets it be found again after re-renders)
- * @param opts    {tone, title, build(body, api), onClose, initialFocus(body), nested}
+ * @param opts    {tone, title, build(body, api), onClose, initialFocus(body), nested, shape(api)}
+ *                shape: the element the panel visibly becomes (defaults to the whole panel).
+ *                The panel's box stays full-screen so the morph is painted all the way.
  */
 export function openPanel(origin, opts) {
   const parent = opts.nested ? stack.at(-1) || null : null;
@@ -88,7 +90,7 @@ export function openPanel(origin, opts) {
   };
   opts.build(body, api);
 
-  const to = rectOf(panel), toRadius = radiusOf(panel);
+  const box = rectOf(panel), to = rectOf(opts.shape?.(api) || panel), toRadius = radiusOf(panel);
   origin.classList.add('is-origin');
   let ghost = cloneTile(origin, from);
   layer.append(ghost);
@@ -100,14 +102,15 @@ export function openPanel(origin, opts) {
     const radius = lerp(tileRadius, toRadius, clamp(p));
     const opening = phase === 'open';
     return {
-      panel: {clipPath: `inset(${top - to.top}px ${to.left + to.width - left - width}px ${to.top + to.height - top - height}px ${left - to.left}px round ${radius}px)`},
+      panel: {clipPath: `inset(${top - box.top}px ${box.left + box.width - left - width}px ${box.top + box.height - top - height}px ${left - box.left}px round ${radius}px)`},
       inner: {
         transform: `translate(${left - to.left}px, ${top - to.top}px) scale(${width / to.width})`,
-        opacity: opening ? clamp((p - 0.1) / 0.4) : clamp((p - 0.35) / 0.45),
+        // Closing: content leaves early so the shrinking shape never crops it.
+        opacity: opening ? clamp((p - 0.1) / 0.4) : clamp((p - 0.62) / 0.3),
       },
       ghost: {
         transform: `translate(${left}px, ${top}px) scale(${width / ghostRect.width})`,
-        opacity: opening ? clamp(1 - p / 0.32) : clamp(1 - p / 0.5),
+        opacity: opening ? clamp(1 - p / 0.32) : clamp(1 - p / 0.6),
       },
       backdrop: {opacity: clamp(p)},
       behind: {transform: `scale(${1 - (parent ? 0.04 : 0.06) * p})`, filter: `brightness(${1 - 0.5 * clamp(p)})`},

@@ -1,14 +1,14 @@
 // Plans: compare salary scenarios. Each tile expands into its editor; a live
 // "left / month" readout in the panel header shows the effect while you drag.
-import {ctx, $, esc, money, cash, compact, toast} from './context.js?v=32';
-import {icon} from './icons.js?v=32';
-import {openPanel} from './expand.js?v=32';
-import {syncRange} from './sliders.js?v=32';
-import {attachSwipe} from './swipe.js?v=32';
-import {movePill, reduceMotion, slideToConfirm, springIn, springText} from './motion.js?v=32';
-import {calculate, uid, spendingLimit, minimumSalary, carPriceRange, CAR_PRICE_ASSUMPTIONS, usesTakeHome, taxes, GOAL_ICONS, goalIcon, GOAL_COLORS, goalColor} from './finance.js?v=32';
-import {createBudget, lockIn, unlock} from './ledger.js?v=32';
-import {persist} from './store.js?v=32';
+import {ctx, $, esc, money, cash, compact, toast} from './context.js?v=33';
+import {icon} from './icons.js?v=33';
+import {openPanel} from './expand.js?v=33';
+import {syncRange} from './sliders.js?v=33';
+import {attachSwipe} from './swipe.js?v=33';
+import {movePill, reduceMotion, slideToConfirm, springIn, springText} from './motion.js?v=33';
+import {calculate, uid, spendingLimit, minimumSalary, carPriceRange, CAR_PRICE_ASSUMPTIONS, usesTakeHome, taxes, GOAL_ICONS, goalIcon, GOAL_COLORS, goalColor} from './finance.js?v=33';
+import {createBudget, lockIn, unlock} from './ledger.js?v=33';
+import {persist} from './store.js?v=33';
 
 // Inline custom property for a goal's optional color.
 const tint = g => (goalColor(g) ? ` style="--goal:${goalColor(g)}"` : '');
@@ -304,7 +304,7 @@ function openGoals(origin) {
       function draw() {
         const plan = ctx.plan(), c = calculate(plan);
         body.innerHTML = `<div id="goalList">${c.goals.map(g => { const t = timing(g); return `<div class="goal" data-goal="${g.id}"${tint(g)}>
-            <div class="goal-swipe swipe-row" data-item-id="${g.id}"><button type="button" class="swipe-delete" aria-label="Delete ${esc(g.name || 'goal')}">${icon('trash')}<span>Delete</span></button><div class="swipe-front"><button type="button" class="goal-summary" data-edit-goal="${g.id}" data-tile="goal-${g.id}"><span class="goal-chip${goalColor(g) ? ' has-color' : ''}" aria-hidden="true"${tint(g)}>${icon(goalIcon(g))}</span><span class="goal-summary-text"><span class="goal-summary-name">${esc(g.name.trim() || 'New goal')}</span><small>${g.months === 0 ? 'Reached' : g.months === null ? t.date : `${money(g.monthly)}/mo · ${t.date}`}</small></span><span class="goal-summary-total">${money(g.target)}</span></button></div></div></div>`; }).join('')}</div>
+            <div class="goal-swipe swipe-row" data-item-id="${g.id}"><button type="button" class="swipe-delete" aria-label="Delete ${esc(g.name || 'goal')}">${icon('trash')}<span>Delete</span></button><div class="swipe-front" data-tile="goal-${g.id}"><button type="button" class="goal-summary" data-edit-goal="${g.id}"><span class="goal-chip${goalColor(g) ? ' has-color' : ''}" aria-hidden="true"${tint(g)}>${icon(goalIcon(g))}</span><span class="goal-summary-text"><span class="goal-summary-name">${esc(g.name.trim() || 'New goal')}</span><small>${g.months === 0 ? 'Reached' : g.months === null ? t.date : `${money(g.monthly)}/mo · ${t.date}`}</small></span><span class="goal-summary-total">${money(g.target)}</span></button></div></div></div>`; }).join('')}</div>
           <button type="button" class="text-button" id="addGoal">${icon('plus')} Add goal</button>`;
         body.querySelectorAll('.goal-swipe').forEach(row => attachSwipe(row, id => removeGoal(id)));
         update();
@@ -327,7 +327,7 @@ function openGoals(origin) {
           const card = body.querySelector(`[data-tile="goal-${goal.id}"]`);
           card.scrollIntoView({block: 'nearest'});
           openGoalSheet(card, goal.id, {redraw: draw, remove: removeGoal});
-        } else if (b.dataset.editGoal) openGoalSheet(b, b.dataset.editGoal, {redraw: draw, remove: removeGoal});
+        } else if (b.dataset.editGoal) openGoalSheet(b.closest('.swipe-front'), b.dataset.editGoal, {redraw: draw, remove: removeGoal});
       });
       draw();
     },
@@ -342,6 +342,7 @@ function openGoalSheet(card, id, {redraw, remove}) {
   openPanel(card, {
     nested: true,
     tone: 'goal',
+    shape: api => api.layer.querySelector('.panel-inner'),
     title: '',
     style: goalColor(g0) ? `--goal:${goalColor(g0)}` : '',
     build(body, api) {

@@ -71,7 +71,7 @@ main{max-width:640px;margin:0 auto;padding:4px 16px 0}
 .tile{position:relative;display:flex;flex-direction:column;align-items:stretch;min-width:0;min-height:148px;padding:18px;border-radius:var(--radius);background:var(--tile);border:1px solid var(--line);color:var(--text);text-align:left;overflow:hidden;isolation:isolate;container-type:inline-size;transition:transform .45s var(--spring),border-color .2s}
 button.tile:active{transform:scale(.972);transition-duration:.12s}
 button.tile:focus-visible{outline:2px solid #ffffffb3;outline-offset:2px}
-.tile.is-origin{visibility:hidden}
+.is-origin{visibility:hidden}
 .tile-head{display:flex;align-items:center;gap:9px;min-width:0}
 .tile-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:var(--well);color:var(--soft);flex:none}
 .tile-icon .fa-icon{width:16px;height:16px}
@@ -316,7 +316,7 @@ button.tile:focus-visible{outline:2px solid #ffffffb3;outline-offset:2px}
 .estimate span{font-size:13px;color:var(--muted)}
 .estimate output{font-size:26px;font-weight:650;letter-spacing:-.7px;font-variant-numeric:tabular-nums}
 .goal{margin-top:10px}
-.goal-swipe .goal-summary{display:flex;align-items:center;gap:12px;flex:1;min-width:0;min-height:68px;padding:14px 16px;text-align:left}
+.goal-summary{display:flex;align-items:center;gap:12px;flex:1;min-width:0;min-height:68px;padding:14px 16px;text-align:left}
 .goal-summary-name{flex:1;min-width:0;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .goal-summary-total{font-weight:600;font-variant-numeric:tabular-nums}
 .goal.is-editing{padding:16px;border-radius:22px;background:#ffffff08;border:1px solid var(--line-strong)}
@@ -450,7 +450,7 @@ dialog::backdrop{background:#000000b3;-webkit-backdrop-filter:blur(8px);backdrop
 /* Goal icons */
 .goal-chip{display:inline-grid;place-items:center;width:34px;height:34px;flex:none;border-radius:11px;background:var(--well);color:var(--text);font-style:normal}
 .goal-chip .fa-icon{width:16px;height:16px}
-.goal-swipe .goal-summary{gap:12px}
+.goal-summary{gap:12px}
 .goal-icon-row{display:flex!important;align-items:center;gap:6px}
 .goal-icon-row .goal-chip{width:28px;height:28px;border-radius:9px}
 .goal-icon-row .goal-chip .fa-icon{width:13px;height:13px}
@@ -460,7 +460,7 @@ dialog::backdrop{background:#000000b3;-webkit-backdrop-filter:blur(8px);backdrop
 .goal-icon-option .fa-icon{width:18px;height:18px}
 .goal-icon-option:active{transform:scale(.92)}
 .goal-icon-option[aria-checked=true]{background:#fff;border-color:#fff;color:#000}
-.goal-swipe .goal-chip{background:#ffffff14}
+.goal-summary .goal-chip{background:#ffffff14}
 
 /* Goal colors (optional) */
 .goal-chip.has-color{background:color-mix(in srgb,var(--goal) 22%,transparent)!important;color:var(--goal)}
@@ -477,7 +477,7 @@ dialog::backdrop{background:#000000b3;-webkit-backdrop-filter:blur(8px);backdrop
 
 /* Goals list: two-line cards */
 .goal-list-body .goal{margin-top:8px}
-.goal-swipe .goal-summary{min-height:64px;padding:12px 14px}
+.goal-summary{min-height:64px;padding:12px 14px}
 .goal-summary-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .goal-summary-text small{display:block;margin:0;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
@@ -532,8 +532,8 @@ input.has-clear{padding-right:38px!important}
 
 /* The goal sheet sizes to its content and sits at the bottom, with the goals
    list showing above it. The close button joins the name row. */
-.panel[data-tone=goal]{top:auto;max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px)}
-.panel[data-tone=goal] .panel-inner{position:relative;inset:auto;max-height:inherit}
+.panel[data-tone=goal]{background:#0c0c0f;box-shadow:none}
+.panel[data-tone=goal] .panel-inner{top:auto;max-height:100%;border-radius:32px;box-shadow:inset 0 0 0 1px var(--line-strong);background:radial-gradient(120% 40% at 50% 0%,color-mix(in srgb,var(--goal,#ffffff) 16%,transparent),#0000 70%)}
 .panel[data-tone=goal] .panel-head{position:absolute;top:0;right:0;z-index:2;padding:16px 16px 0 0}
 .panel[data-tone=goal] .panel-head h2,.panel[data-tone=goal] .panel-aside{display:none}
 .panel[data-tone=goal] .goal-sheet{padding:18px 20px 20px}
@@ -552,3 +552,6 @@ input.has-clear{padding-right:38px!important}
 .gs-hero{padding:18px}
 .gs-progress-label{margin-top:8px!important}
 .gs-amounts{gap:12px}
+
+/* A goal card copied for the sheet morph keeps the card's look. */
+.swipe-front.panel-ghost{border-radius:18px}

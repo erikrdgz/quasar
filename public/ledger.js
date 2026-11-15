@@ -3,7 +3,7 @@
 // A budget is a snapshot of a plan taken when it is locked in. Fixed bills, the car
 // payment and goal savings are treated as already spoken for, so purchases only draw
 // down what is left after them ("spendable").
-import {calculate, uid} from './finance.js?v=32';
+import {calculate, uid} from './finance.js?v=33';
 
 export const CATEGORIES = [
   {id: 'groceries', label: 'Groceries', color: '#7fd1a4'},
