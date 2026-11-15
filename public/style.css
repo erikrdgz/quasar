@@ -591,9 +591,14 @@ dialog::backdrop{background:#000000b3;-webkit-backdrop-filter:blur(8px);backdrop
 .panel-body{padding-bottom:calc(28px + env(safe-area-inset-bottom) + var(--kb,0px))}
 .panel[data-tone=goal] .goal-sheet{padding-bottom:calc(20px + var(--kb,0px))}
 
-/* The intro and setup always fill exactly the visible area above the keyboard,
-   so the step's title, field and Continue stay in view with nothing to scroll. */
-.intro{inset:auto 0;top:var(--vvt,0px);height:var(--vvh,100dvh)}
+/* Setup's content fills exactly the visible area above the keyboard, so the
+   step's title, field and Continue stay in view with nothing to scroll. */
+.setup{inset:auto 0;top:var(--vvt,0px);height:var(--vvh,100%)}
+/* The black backdrop always covers the whole screen; only the setup content
+   follows the keyboard. While the intro is up, the app behind is hidden and
+   the page can't scroll, so nothing shows through as the keyboard moves. */
+html.intro-open,html.intro-open body{overflow:hidden;height:100%}
+html.intro-open #app,html.intro-open .tabbar{visibility:hidden}
 
 /* The plan step's name is its heading, which keeps the step short enough to
    sit above the keyboard with Continue in view. */

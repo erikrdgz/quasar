@@ -1,11 +1,11 @@
 // First run: the logo, then a short setup walkthrough (setup.js).
 // Every launch after that: a short welcome with the logo and a greeting.
-import {ctx, money} from './context.js?v=40';
-import {samples, reduceMotion} from './motion.js?v=40';
-import {openMonthOf, totals, monthName, lockIn} from './ledger.js?v=40';
-import {startSetup} from './setup.js?v=40';
-import {pickGreeting} from './greeting.js?v=40';
-import {flush, persist} from './store.js?v=40';
+import {ctx, money} from './context.js?v=41';
+import {samples, reduceMotion} from './motion.js?v=41';
+import {openMonthOf, totals, monthName, lockIn} from './ledger.js?v=41';
+import {startSetup} from './setup.js?v=41';
+import {pickGreeting} from './greeting.js?v=41';
+import {flush, persist} from './store.js?v=41';
 
 const curve = samples(220, 22);
 const intro = () => document.getElementById('intro');
@@ -93,6 +93,8 @@ async function dismiss() {
   const root = intro(), app = document.getElementById('app'), tabbar = document.querySelector('.tabbar');
   if (!root || root.dataset.leaving) return;
   root.dataset.leaving = '1';
+  // Bring the app back so it can settle in underneath the fading intro.
+  document.documentElement.classList.remove('intro-open');
   if (!reduceMotion()) {
     const img = root.querySelector('.intro-mark');
     img?.animate([{transform: 'scale(1)', opacity: 1}, {transform: 'scale(1.35)', opacity: 0}], {duration: 420, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards'});
@@ -120,6 +122,7 @@ export function showWelcome(text = null) {
     document.body.append(root);
   }
   delete root.dataset.leaving;
+  document.documentElement.classList.add('intro-open');
   const prefs = ctx.state.prefs;
   const line = text || pickGreeting(prefs.name, new Date(), Math.random, prefs.lastGreeting);
   if (!text) { prefs.lastGreeting = line; ctx.commit({render: false}); }
@@ -163,6 +166,7 @@ function onboarding() {
 let navigate = null;
 export function runIntro(goTo) {
   navigate = goTo;
+  document.documentElement.classList.add('intro-open');
   if (ctx.state.prefs.onboarded) showWelcome();
   else onboarding();
 }

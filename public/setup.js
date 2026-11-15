@@ -1,13 +1,13 @@
 // First-run setup: one full-screen question per step with Back, Skip and a
 // percentage bar. Answers are written straight into the first plan, so going
 // back shows what was entered, and any step can be skipped.
-import {ctx, esc, money, cash} from './context.js?v=40';
-import {icon} from './icons.js?v=40';
-import {reduceMotion, slideToConfirm, movePill} from './motion.js?v=40';
-import {blank, calculate, isUntouched, uid, usesTakeHome} from './finance.js?v=40';
+import {ctx, esc, money, cash} from './context.js?v=41';
+import {icon} from './icons.js?v=41';
+import {reduceMotion, slideToConfirm, movePill} from './motion.js?v=41';
+import {blank, calculate, isUntouched, uid, usesTakeHome} from './finance.js?v=41';
 
-import {CATEGORIES, STEPS, percentAt} from './setup-steps.js?v=40';
-import {stateSelect} from './plans-view.js?v=40';
+import {CATEGORIES, STEPS, percentAt} from './setup-steps.js?v=41';
+import {stateSelect} from './plans-view.js?v=41';
 
 // A plain carousel: both pages slide one screen width on the same ease.
 const PUSH_MS = 380, PUSH_EASE = 'cubic-bezier(.32,.72,0,1)';
