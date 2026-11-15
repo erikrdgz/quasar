@@ -1,7 +1,7 @@
 // Device storage. IndexedDB holds the app state; localStorage is a fallback for
 // browsers that block IndexedDB. The original localStorage plans are read once
 // on first launch and left in place as a backup.
-import {LEGACY_KEY, defaultState, fromLegacy, validateState} from './state.js?v=21';
+import {LEGACY_KEY, defaultState, fromLegacy, validateState} from './state.js?v=22';
 
 const DB = 'quasar', STORE = 'state', KEY = 'app', FALLBACK = 'quasar-state-v2';
 let db = null;
@@ -46,16 +46,17 @@ export async function load() {
   }
 }
 
-let pending = null, timer = 0;
+let pending = null, timer = 0, erased = false;
 // Coalesce bursts (slider drags) into one write.
 export function save(state) {
+  if (erased) return;
   pending = state;
   clearTimeout(timer);
   timer = setTimeout(flush, 120);
 }
 export async function flush() {
   clearTimeout(timer);
-  if (!pending) return true;
+  if (!pending || erased) return true;
   const snapshot = structuredClone(pending);
   pending = null;
   try {
@@ -80,4 +81,22 @@ export async function readBackup(file) {
   let raw;
   try { raw = JSON.parse(await file.text()); } catch { throw Error('That file is not a Quasar backup.'); }
   return validateState(raw);
+}
+
+// Removes everything Quasar stored on this device, including the original
+// localStorage plans (otherwise they would be migrated back in on next launch).
+// Pending writes are dropped so nothing is saved again before the page reloads.
+export async function eraseAll() {
+  erased = true;
+  pending = null;
+  clearTimeout(timer);
+  db?.close();
+  db = null;
+  await new Promise(resolve => {
+    try {
+      const request = indexedDB.deleteDatabase(DB);
+      request.onsuccess = request.onerror = request.onblocked = () => resolve();
+    } catch { resolve(); }
+  });
+  try { localStorage.removeItem(FALLBACK); localStorage.removeItem(LEGACY_KEY); } catch {}
 }

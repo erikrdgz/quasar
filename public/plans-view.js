@@ -1,14 +1,14 @@
 // Plans: compare salary scenarios. Each tile expands into its editor; a live
 // "left / month" readout in the panel header shows the effect while you drag.
-import {ctx, $, esc, money, cash, compact, toast} from './context.js?v=21';
-import {icon} from './icons.js?v=21';
-import {openPanel} from './expand.js?v=21';
-import {syncRange} from './sliders.js?v=21';
-import {attachSwipe} from './swipe.js?v=21';
-import {movePill, slideToConfirm, springIn, springText} from './motion.js?v=21';
-import {calculate, uid, spendingLimit, minimumSalary, carPriceRange, CAR_PRICE_ASSUMPTIONS, usesTakeHome, taxes} from './finance.js?v=21';
-import {createBudget, lockIn} from './ledger.js?v=21';
-import {persist} from './store.js?v=21';
+import {ctx, $, esc, money, cash, compact, toast} from './context.js?v=22';
+import {icon} from './icons.js?v=22';
+import {openPanel} from './expand.js?v=22';
+import {syncRange} from './sliders.js?v=22';
+import {attachSwipe} from './swipe.js?v=22';
+import {movePill, slideToConfirm, springIn, springText} from './motion.js?v=22';
+import {calculate, uid, spendingLimit, minimumSalary, carPriceRange, CAR_PRICE_ASSUMPTIONS, usesTakeHome, taxes} from './finance.js?v=22';
+import {createBudget, lockIn} from './ledger.js?v=22';
+import {persist} from './store.js?v=22';
 
 const numeric = el => Math.max(0, Number(el.value) || 0);
 const rentOf = plan => plan.expenses.find(e => /\brent\b/i.test(e.name));

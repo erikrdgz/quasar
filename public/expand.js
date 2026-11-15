@@ -8,8 +8,8 @@
 //   • the app behind, which recedes and dims.
 // Geometry is always measured with the app unscaled, and a close that interrupts
 // an open reverses from wherever the card is at that moment.
-import {icon} from './icons.js?v=21';
-import {reduceMotion} from './motion.js?v=21';
+import {icon} from './icons.js?v=22';
+import {reduceMotion} from './motion.js?v=22';
 
 // iOS-style spring described by response (seconds) and damping ratio.
 function spring(response, dampingRatio) {

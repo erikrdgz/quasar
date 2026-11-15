@@ -1,15 +1,15 @@
 // Quasar: compare plans, lock one in, then track what's left each month.
-import {ctx, $, esc, money, toast, modal} from './context.js?v=21';
-import {icon} from './icons.js?v=21';
-import {load, flush, backupBlob, readBackup} from './store.js?v=21';
-import {samples, reduceMotion} from './motion.js?v=21';
-import {attachSwipe} from './swipe.js?v=21';
-import {blank, calculate, uid} from './finance.js?v=21';
-import {closePanel, panelOpen} from './expand.js?v=21';
-import {renderToday, setupToday} from './today.js?v=21';
-import {renderLedger, setupLedger} from './ledger-view.js?v=21';
-import {renderPlans, setupPlans} from './plans-view.js?v=21';
-import {runIntro} from './intro.js?v=21';
+import {ctx, $, esc, money, toast, modal} from './context.js?v=22';
+import {icon} from './icons.js?v=22';
+import {load, flush, backupBlob, readBackup, eraseAll} from './store.js?v=22';
+import {samples, reduceMotion, holdToConfirm} from './motion.js?v=22';
+import {attachSwipe} from './swipe.js?v=22';
+import {blank, calculate, uid} from './finance.js?v=22';
+import {closePanel, panelOpen} from './expand.js?v=22';
+import {renderToday, setupToday} from './today.js?v=22';
+import {renderLedger, setupLedger} from './ledger-view.js?v=22';
+import {renderPlans, setupPlans} from './plans-view.js?v=22';
+import {runIntro} from './intro.js?v=22';
 
 const VIEWS = {today: renderToday, ledger: renderLedger, plans: renderPlans};
 const curve = samples(300, 28);
@@ -50,7 +50,8 @@ function showPlans() {
   modal('Plans', `<button type="button" class="button primary" data-new-plan>${icon('plus')} New plan</button>
     <div class="plan-list" style="margin-top:14px">${s.plans.map(p => `<div class="plan-item"><div class="swipe-row" data-plan="${p.id}"><button type="button" class="swipe-delete" aria-label="Delete ${esc(p.name)}">${icon('trash')}<span>Delete</span></button><div class="swipe-front"><button type="button" class="load-plan" data-load="${p.id}"><span class="plan-title">${esc(p.name)}${p.id === s.currentPlanId ? icon('check') : ''}</span><small>${p.incomeMode === 'takehome' ? `${money(p.takeHome)} take-home / mo` : `${money(p.salary)} / yr`} · ${money(calculate(p).left)} left / mo${s.budget?.planId === p.id ? ' · Your budget' : ''}</small></button><button type="button" class="swipe-options" aria-label="Options for ${esc(p.name)}" aria-expanded="false" aria-controls="actions-${p.id}">${icon('more')}</button></div></div><div class="plan-actions" id="actions-${p.id}" hidden><button type="button" data-duplicate="${p.id}">${icon('plans')} Duplicate</button><button type="button" data-export-plan="${p.id}">${icon('download')} PDF</button><button type="button" class="danger" data-delete-plan="${p.id}">${icon('trash')} Delete</button></div></div>`).join('')}</div>
     <div class="modal-section"><h3>Your name</h3><p class="fine">Used for your welcome when you open Quasar.</p><label class="text-field"><input id="nameField" type="text" maxlength="40" autocomplete="given-name" enterkeyhint="done" value="${esc(s.prefs.name)}" aria-label="Your name"></label></div>
-    <div class="modal-section"><h3>Backup</h3><p class="fine">Everything lives only on this device. Export a backup now and then, or to move to the installed app or a new phone.</p><div class="button-row"><button type="button" class="button quiet" data-export-backup>${icon('download')} Export</button><button type="button" class="button quiet" data-import-backup>${icon('upload')} Import</button></div></div>`);
+    <div class="modal-section"><h3>Backup</h3><p class="fine">Everything lives only on this device. Export a backup now and then, or to move to the installed app or a new phone.</p><div class="button-row"><button type="button" class="button quiet" data-export-backup>${icon('download')} Export</button><button type="button" class="button quiet" data-import-backup>${icon('upload')} Import</button></div></div>
+    <div class="modal-section"><h3>Start over</h3><p class="fine">Erase every plan, month and purchase on this device and begin again from the welcome screen.</p><button type="button" class="button danger" data-erase>${icon('trash')} Erase all data</button></div>`);
   $('nameField').addEventListener('change', e => { const name = e.target.value.trim().slice(0, 40); if (!name) { e.target.value = s.prefs.name; return; } s.prefs.name = name; e.target.value = name; ctx.commit({render: false}); toast('Name saved'); });
   $('modalBody').querySelectorAll('.swipe-row').forEach(row => {
     const button = row.querySelector('.swipe-options'), panel = row.nextElementSibling;
@@ -100,7 +101,7 @@ $('modalBody').addEventListener('click', async e => {
   } else if (b.dataset.exportPlan) {
     const plan = s.plans.find(p => p.id === b.dataset.exportPlan);
     b.disabled = true;
-    try { const {downloadPlanPdf} = await import('./plan-pdf.js?v=21'); await downloadPlanPdf(structuredClone(plan)); }
+    try { const {downloadPlanPdf} = await import('./plan-pdf.js?v=22'); await downloadPlanPdf(structuredClone(plan)); }
     catch { toast('Could not create the PDF. Try again.'); }
     finally { b.disabled = false; }
   } else if (b.dataset.exportBackup !== undefined) {
@@ -116,10 +117,31 @@ $('modalBody').addEventListener('click', async e => {
     ctx.state = pendingImport; pendingImport = null;
     ctx.commit({render: false}); await flush();
     $('modal').close(); goTo(ctx.state.budget ? 'today' : 'plans'); toast('Backup restored');
-  } else if (b.dataset.cancelImport !== undefined) {
+  } else if (b.dataset.cancelImport !== undefined || b.dataset.cancelErase !== undefined) {
     pendingImport = null; showPlans();
+  } else if (b.dataset.erase !== undefined) {
+    showErase();
   }
 });
+
+// Erasing is a separate confirmation screen with a press-and-hold, so it can't
+// happen from a stray tap. It offers a backup first.
+function showErase() {
+  const s = ctx.state, entries = s.months.reduce((n, m) => n + m.entries.length, 0);
+  const counts = [`${s.plans.length} plan${s.plans.length === 1 ? '' : 's'}`, s.months.length ? `${s.months.length} month${s.months.length === 1 ? '' : 's'} of tracking` : '', entries ? `${entries} logged purchase${entries === 1 ? '' : 's'}` : ''].filter(Boolean);
+  modal('Erase all data?', `<p class="lede">This permanently deletes ${counts.join(', ')}${s.budget ? ', your locked-in budget' : ''}${s.prefs.name ? ' and your name' : ''} from this device. It can't be undone.</p>
+    <p class="fine">Want a copy first? Export a backup, and you can import it later.</p>
+    <div style="display:grid;gap:10px;margin-top:18px">
+      <button type="button" class="button quiet" data-export-backup>${icon('download')} Export backup first</button>
+      <button type="button" class="button danger hold-button" id="holdErase"><span>Hold to erase everything</span></button>
+      <button type="button" class="button quiet" data-cancel-erase>Cancel</button>
+    </div>`);
+  holdToConfirm($('holdErase'), async () => {
+    $('holdErase').querySelector('span:not(.hold-fill)').textContent = 'Erasing…';
+    await eraseAll();
+    location.reload();
+  });
+}
 
 $('importFile').addEventListener('change', async e => {
   const file = e.target.files[0];

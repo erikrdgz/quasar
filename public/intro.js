@@ -1,10 +1,10 @@
 // First run: a two-step onboarding that asks for a name.
 // Every launch after that: a short welcome with the logo and a greeting.
-import {ctx, money} from './context.js?v=21';
-import {samples, reduceMotion} from './motion.js?v=21';
-import {openMonthOf, totals, monthName} from './ledger.js?v=21';
-import {pickGreeting} from './greeting.js?v=21';
-import {flush} from './store.js?v=21';
+import {ctx, money} from './context.js?v=22';
+import {samples, reduceMotion} from './motion.js?v=22';
+import {openMonthOf, totals, monthName} from './ledger.js?v=22';
+import {pickGreeting} from './greeting.js?v=22';
+import {flush} from './store.js?v=22';
 
 const curve = samples(220, 22);
 const intro = () => document.getElementById('intro');

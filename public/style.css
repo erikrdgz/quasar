@@ -389,3 +389,10 @@ dialog::backdrop{background:#000000b3;-webkit-backdrop-filter:blur(8px);backdrop
 .intro-button{margin-top:32px}
 .intro:not(:has(h1)) .intro-logo{animation:breathe 1.6s ease-in-out infinite alternate}
 @keyframes breathe{from{opacity:.75;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+
+/* Destructive press-and-hold: red fill, plain white label */
+.hold-button.danger{background:#ff5e541f;color:#ff8d86}
+.hold-button.danger .hold-fill{background:#e9443e}
+.hold-button.danger>span:not(.hold-fill){mix-blend-mode:normal;color:#ffb3ad}
+.hold-button.danger.is-holding>span:not(.hold-fill),.hold-button.danger.is-confirmed>span:not(.hold-fill){color:#fff}
+#modalBody .lede+.fine{margin-top:10px}
