@@ -330,7 +330,7 @@ button.tile:focus-visible{outline:2px solid #ffffffb3;outline-offset:2px}
 .money-input input,.amount-field input,.text-field input{color:var(--text)}
 .goal-result{display:flex;justify-content:space-between;gap:12px;margin-top:14px;font-size:13px;color:var(--soft)}
 .goal-progress{height:5px;margin-top:12px;border-radius:5px;background:#ffffff14;overflow:hidden}
-.goal-progress span{display:block;height:100%;background:var(--good);transition:width .5s var(--spring)}
+.goal-progress span{display:block;height:100%;border-radius:999px;background:var(--good);transition:width .5s var(--spring)}
 .remove-goal{margin-top:12px;color:#ff8d86}
 .goal-editor[hidden],.goal-swipe[hidden]{display:none}
 
@@ -555,3 +555,6 @@ input.has-clear{padding-right:38px!important}
 
 /* A goal card copied for the sheet morph keeps the card's look. */
 .swipe-front.panel-ghost{border-radius:18px}
+
+/* Progress fills always end in a round cap. */
+.goal-progress,.goal-progress span,.mini-progress,.mini-progress span,.meter>span,.setup-progress,.setup-progress span{border-radius:999px}

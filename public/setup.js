@@ -1,12 +1,12 @@
 // First-run setup: one full-screen question per step with Back, Skip and a
 // percentage bar. Answers are written straight into the first plan, so going
 // back shows what was entered, and any step can be skipped.
-import {ctx, esc, money, cash} from './context.js?v=33';
-import {icon} from './icons.js?v=33';
-import {samples, reduceMotion, slideToConfirm, movePill} from './motion.js?v=33';
-import {calculate, uid, usesTakeHome} from './finance.js?v=33';
+import {ctx, esc, money, cash} from './context.js?v=34';
+import {icon} from './icons.js?v=34';
+import {samples, reduceMotion, slideToConfirm, movePill} from './motion.js?v=34';
+import {calculate, uid, usesTakeHome} from './finance.js?v=34';
 
-import {CATEGORIES, STEPS, percentAt} from './setup-steps.js?v=33';
+import {CATEGORIES, STEPS, percentAt} from './setup-steps.js?v=34';
 
 const curve = samples(260, 26);
 const parse = text => { const n = Number(String(text).replace(/[^\d.]/g, '')); return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0; };

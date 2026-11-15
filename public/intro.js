@@ -1,11 +1,11 @@
 // First run: the logo, then a short setup walkthrough (setup.js).
 // Every launch after that: a short welcome with the logo and a greeting.
-import {ctx, money} from './context.js?v=33';
-import {samples, reduceMotion} from './motion.js?v=33';
-import {openMonthOf, totals, monthName, lockIn} from './ledger.js?v=33';
-import {startSetup} from './setup.js?v=33';
-import {pickGreeting} from './greeting.js?v=33';
-import {flush, persist} from './store.js?v=33';
+import {ctx, money} from './context.js?v=34';
+import {samples, reduceMotion} from './motion.js?v=34';
+import {openMonthOf, totals, monthName, lockIn} from './ledger.js?v=34';
+import {startSetup} from './setup.js?v=34';
+import {pickGreeting} from './greeting.js?v=34';
+import {flush, persist} from './store.js?v=34';
 
 const curve = samples(220, 22);
 const intro = () => document.getElementById('intro');
