@@ -1,7 +1,7 @@
 // Shared app state and small UI helpers used by every view.
-import {save} from './store.js?v=41';
-import {icon} from './icons.js?v=41';
-import {reduceMotion} from './motion.js?v=41';
+import {save} from './store.js?v=43';
+import {icon} from './icons.js?v=43';
+import {reduceMotion} from './motion.js?v=43';
 
 export const $ = id => document.getElementById(id);
 export const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));

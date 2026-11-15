@@ -8,8 +8,8 @@
 //   • the app behind, which recedes and dims.
 // Geometry is always measured with the app unscaled, and a close that interrupts
 // an open reverses from wherever the card is at that moment.
-import {icon} from './icons.js?v=41';
-import {reduceMotion} from './motion.js?v=41';
+import {icon} from './icons.js?v=43';
+import {reduceMotion} from './motion.js?v=43';
 
 // iOS-style spring described by response (seconds) and damping ratio.
 function spring(response, dampingRatio) {
@@ -126,6 +126,18 @@ export function openPanel(origin, opts) {
     return Promise.all(running.map(a => a.finished));
   }
 
+  // Once open, drop the animation's leftover styles so the panel is a plain,
+  // untransformed element. iOS misplaces the text cursor inside transformed,
+  // scrolling containers. Only a custom shape keeps its (static) clip.
+  function settle() {
+    if (closed || !running.length) return;
+    const final = frames(from, fromRadius, from, 1, 'open');
+    running.slice(0, 4).forEach(a => a.cancel());
+    running = running.slice(4);
+    panel.style.clipPath = opts.shape ? final.panel.clipPath : '';
+    ghost.style.opacity = '0';
+  }
+
   // Where the spring is right now, so an interrupted open reverses smoothly.
   function progressNow() {
     if (!run) return 1;
@@ -138,7 +150,7 @@ export function openPanel(origin, opts) {
     ghost.remove();
     layer.animate([{opacity: 0}, {opacity: 1}], {duration: 160});
   } else {
-    animate(OPEN, 0, 1, from, fromRadius, from, 'open').catch(() => {});
+    animate(OPEN, 0, 1, from, fromRadius, from, 'open').then(settle, () => {});
   }
 
   const focusTarget = opts.initialFocus?.(body) || layer.querySelector('.panel-close');

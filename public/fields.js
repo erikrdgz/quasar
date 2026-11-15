@@ -37,7 +37,6 @@ document.addEventListener('input', e => {
 // which scrolling panels add as bottom padding). The field being edited, or its
 // row ([data-reveal]: a bill's name, amount and slider), is scrolled into view.
 const vv = globalThis.visualViewport;
-const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const keyboardHeight = () => (vv ? Math.max(0, innerHeight - vv.height - vv.offsetTop) : 0);
 const editing = () => { const el = document.activeElement; return isTextField(el) ? el : null; };
 
@@ -57,7 +56,8 @@ export function reveal(el) {
   let dy = 0;
   if (r.bottom > bottom) dy = r.bottom - bottom;
   if (r.top - dy < top) dy = r.top - top;
-  if (Math.abs(dy) > 1) scroller.scrollBy({top: dy, behavior: reduceMotion.matches ? 'auto' : 'smooth'});
+  // Instant: a smooth scroll races iOS's own keyboard scrolling and the cursor lags.
+  if (Math.abs(dy) > 1) scroller.scrollBy({top: dy, behavior: 'auto'});
 }
 
 function onViewport() {
@@ -78,4 +78,5 @@ document.addEventListener('focusin', e => {
   const el = e.target;
   setTimeout(() => { if (document.activeElement === el) reveal(el); }, 60);
   setTimeout(() => { if (document.activeElement === el) reveal(el); }, 420);
+  setTimeout(() => { if (document.activeElement === el) reveal(el); }, 800);
 });

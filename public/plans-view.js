@@ -1,15 +1,15 @@
 // Plans: compare salary scenarios. Each tile expands into its editor; a live
 // "left / month" readout in the panel header shows the effect while you drag.
-import {ctx, $, esc, money, cash, compact, toast} from './context.js?v=41';
-import {icon} from './icons.js?v=41';
-import {openPanel} from './expand.js?v=41';
-import {syncRange} from './sliders.js?v=41';
-import {attachSwipe} from './swipe.js?v=41';
-import {movePill, reduceMotion, slideToConfirm, springIn, springText} from './motion.js?v=41';
-import {calculate, uid, minimumSalary, spendingLimit, sliderRange, carPriceRange, CAR_PRICE_ASSUMPTIONS, usesTakeHome, taxes, GOAL_ICONS, goalIcon, GOAL_COLORS, goalColor} from './finance.js?v=41';
-import {createBudget, lockIn, unlock} from './ledger.js?v=41';
-import {persist} from './store.js?v=41';
-import {STATES, stateName, hasIncomeTax} from './states.js?v=41';
+import {ctx, $, esc, money, cash, compact, toast} from './context.js?v=43';
+import {icon} from './icons.js?v=43';
+import {openPanel} from './expand.js?v=43';
+import {syncRange} from './sliders.js?v=43';
+import {attachSwipe} from './swipe.js?v=43';
+import {movePill, reduceMotion, slideToConfirm, springIn, springText} from './motion.js?v=43';
+import {calculate, uid, minimumSalary, spendingLimit, sliderRange, carPriceRange, CAR_PRICE_ASSUMPTIONS, usesTakeHome, taxes, GOAL_ICONS, goalIcon, GOAL_COLORS, goalColor} from './finance.js?v=43';
+import {createBudget, lockIn, unlock} from './ledger.js?v=43';
+import {persist} from './store.js?v=43';
+import {STATES, stateName, hasIncomeTax} from './states.js?v=43';
 
 // Inline custom property for a goal's optional color.
 const tint = g => (goalColor(g) ? ` style="--goal:${goalColor(g)}"` : '');
@@ -40,7 +40,7 @@ export function renderPlans() {
 
   grid.innerHTML = `
     <button type="button" class="tile hero span-2 ${c.left < 0 ? 'is-over' : ''}" data-tile="p-hero">
-      <div class="tile-head"><span class="tile-label">Left each month</span>${locked ? `<span class="status" style="--status:${synced ? 'var(--good)' : 'var(--warn)'}">${synced ? 'Your budget' : 'Changed'}</span>` : ''}</div>
+      <div class="tile-head"><span class="tile-label">Left each month</span>${locked ? `<span class="status" data-pace="${synced ? 'track' : 'hot'}">${synced ? 'Your budget' : 'Changed'}</span>` : ''}</div>
       <span class="hero-value" id="planLeft"></span>
       <div class="allocation" aria-hidden="true">${alloc.map(([n, color]) => `<span style="flex:${Math.max(0, n) / denom};background:${color}"></span>`).join('')}</div>
       <div class="hero-meta"><span>${c.left >= 0 ? `${money(c.left * 12 / 52)} / week` : `Cut ${money(-c.left)} to balance`}</span><span>${money(c.left * 12)} / year</span></div>
@@ -123,7 +123,7 @@ function setLimits(body, hold = null) {
 }
 
 function expenseRow(e) {
-  return `<div class="expense-item" data-expense="${e.id}" data-reveal><div class="row"><input class="expense-name" data-field="name" value="${esc(e.name)}" maxlength="80" aria-label="Bill name" enterkeyhint="done"><span class="money-input"><span>$</span><input data-field="amount" type="text" data-num min="0" step="0.01" inputmode="decimal" value="${e.amount}" aria-label="${esc(e.name)} monthly amount" enterkeyhint="done"></span><button type="button" class="remove" data-remove="${e.id}" aria-label="Remove ${esc(e.name)}">${icon('close')}</button></div><input type="range" min="0" step="1" data-field="amount" aria-label="${esc(e.name)} slider" value="${e.amount}"><div class="range-labels"><span>$0</span><span class="spending-max"></span></div></div>`;
+  return `<div class="expense-item" data-expense="${e.id}" data-reveal><div class="row"><input class="expense-name" data-field="name" autocomplete="off" value="${esc(e.name)}" maxlength="80" aria-label="Bill name" enterkeyhint="done"><span class="money-input"><span>$</span><input data-field="amount" type="text" data-num min="0" step="0.01" inputmode="decimal" value="${e.amount}" aria-label="${esc(e.name)} monthly amount" enterkeyhint="done"></span><button type="button" class="remove" data-remove="${e.id}" aria-label="Remove ${esc(e.name)}">${icon('close')}</button></div><input type="range" min="0" step="1" data-field="amount" aria-label="${esc(e.name)} slider" value="${e.amount}"><div class="range-labels"><span>$0</span><span class="spending-max"></span></div></div>`;
 }
 
 // Shared input handling for bill rows (bills panel and rent panel).
@@ -367,7 +367,7 @@ function openGoalSheet(card, id, {redraw, remove}) {
     build(body, api) {
       body.classList.add('goal-sheet');
       body.innerHTML = `
-        <div class="gs-name"><button type="button" class="goal-chip gs-chip" data-act="style" aria-expanded="false" aria-controls="gsStyle" aria-label="Icon and color"></button><input class="gs-name-input" data-field="name" maxlength="80" enterkeyhint="done" placeholder="Name your goal" aria-label="Goal name" value="${esc(g0.name)}"></div>
+        <div class="gs-name"><button type="button" class="goal-chip gs-chip" data-act="style" aria-expanded="false" aria-controls="gsStyle" aria-label="Icon and color"></button><input class="gs-name-input" data-field="name" autocomplete="off" maxlength="80" enterkeyhint="done" placeholder="Name your goal" aria-label="Goal name" value="${esc(g0.name)}"></div>
         <div class="gs-style" id="gsStyle" hidden>
           <div class="goal-icons gs-icons" role="radiogroup" aria-label="Goal icon">${GOAL_ICONS.map(([iconId, label]) => `<button type="button" class="goal-icon-option" role="radio" data-goal-icon="${iconId}" aria-checked="false" aria-label="${label}" title="${label}">${icon(iconId)}</button>`).join('')}</div>
           <div class="goal-colors gs-colors" role="radiogroup" aria-label="Goal color"><button type="button" class="goal-color-option is-none" role="radio" data-goal-color="" aria-checked="false" aria-label="No color" title="No color"></button>${GOAL_COLORS.map(([colorId, label, hex]) => `<button type="button" class="goal-color-option" role="radio" data-goal-color="${colorId}" aria-checked="false" aria-label="${label}" title="${label}" style="--swatch:${hex}"></button>`).join('')}</div>
