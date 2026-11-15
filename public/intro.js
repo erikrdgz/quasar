@@ -8,7 +8,67 @@ import {flush} from './store.js?v=22';
 
 const curve = samples(220, 22);
 const intro = () => document.getElementById('intro');
-const logo = '<img class="intro-logo" src="./icon-512.png" alt="" width="168" height="168">';
+const logo = `<div class="intro-mark" aria-hidden="true">
+  <img class="intro-logo-source" src="./icon-512.png" alt="" width="168" height="168" decoding="async">
+  <svg class="intro-orbit" viewBox="0 0 512 512" aria-hidden="true">
+    <defs>
+      <filter id="intro-ring-soft"><feGaussianBlur stdDeviation="2"/></filter>
+      <filter id="intro-seam-soft"><feGaussianBlur stdDeviation="9"/></filter>
+      <mask id="intro-ring-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512"><g filter="url(#intro-ring-soft)"><circle cx="248" cy="245" r="160" fill="white"/><circle cx="248" cy="245" r="94" fill="black"/></g></mask>
+      <mask id="intro-clean-ring" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512"><rect width="512" height="512" fill="white"/><path d="M248 245L512 265V512H230Z" fill="black" filter="url(#intro-seam-soft)"/></mask>
+      <mask id="intro-ring-patch" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512"><path d="M248 245L512 265V512H230Z" fill="white" filter="url(#intro-seam-soft)"/></mask>
+    </defs>
+    <g mask="url(#intro-ring-mask)">
+      <image href="./icon-512.png" width="512" height="512" mask="url(#intro-clean-ring)"/>
+      <g mask="url(#intro-ring-patch)"><image href="./icon-512.png" width="512" height="512" transform="rotate(90 248 245)"/></g>
+    </g>
+  </svg>
+  <svg class="intro-stroke" viewBox="0 0 512 512" aria-hidden="true">
+    <defs><clipPath id="intro-tail-clip"><path d="M248 272L318 286L458 427L344 382L283 340Z"/></clipPath><mask id="intro-tail-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512"><path class="intro-tail-draw" d="M259 286 Q318 315 444 415" pathLength="1" fill="none" stroke="white" stroke-width="84" stroke-linecap="round"/></mask></defs>
+    <image href="./icon-512.png" width="512" height="512" clip-path="url(#intro-tail-clip)" mask="url(#intro-tail-mask)"/>
+  </svg>
+  <img class="intro-logo-finish" src="./icon-512.png" alt="" width="168" height="168" decoding="async">
+  <img class="intro-logo-shine" src="./icon-512.png" alt="" width="168" height="168" decoding="async">
+  <span class="intro-logo-flare"></span>
+</div>`;
+const logoReady = new WeakMap();
+
+// A signature in three beats: seat the reflective ring, write the diagonal,
+// then cut a single specular light across the completed mark.
+async function revealLogo(mark) {
+  try { await mark.querySelector('.intro-logo-source').decode(); } catch { /* Keep the welcome usable if the image fails. */ }
+  if (!mark.isConnected) return;
+  const orbit = mark.querySelector('.intro-orbit');
+  const stroke = mark.querySelector('.intro-stroke');
+  const draw = mark.querySelector('.intro-tail-draw');
+  const finish = mark.querySelector('.intro-logo-finish');
+  if (reduceMotion()) {
+    finish.animate([{opacity: 0}, {opacity: 1}], {duration: 180, fill: 'both'});
+    return;
+  }
+  // Two continuous revolutions, a short deceleration, then the separate sparkle.
+  orbit.animate([
+    {opacity: 0, transform: 'perspective(600px) rotateY(24deg) rotateZ(-720deg) scale(.92)', filter: 'blur(1.5px)', offset: 0},
+    {opacity: 1, transform: 'perspective(600px) rotateY(18deg) rotateZ(-630deg) scale(.96)', filter: 'blur(.4px)', offset: .12},
+    {opacity: 1, transform: 'perspective(600px) rotateY(-12deg) rotateZ(-180deg) scale(1)', filter: 'blur(.3px)', offset: .68, easing: 'cubic-bezier(.12,.45,.18,1)'},
+    {opacity: 1, transform: 'perspective(600px) rotateY(0deg) rotateZ(0deg) scale(1)', filter: 'blur(0px)', offset: .94},
+    {opacity: 0, transform: 'perspective(600px) rotateY(0deg) rotateZ(0deg) scale(1)', filter: 'blur(0px)', offset: 1}
+  ], {duration: 2460, easing: 'linear', fill: 'both'});
+  stroke.animate([{opacity: 0}, {opacity: 1, offset: .25}, {opacity: 0}], {duration: 350, delay: 2250, fill: 'both'});
+  draw.animate([{strokeDashoffset: '1'}, {strokeDashoffset: '0'}], {duration: 280, delay: 2250, easing: 'cubic-bezier(.3,0,.15,1)', fill: 'both'});
+  finish.animate([{opacity: 0}, {opacity: 1}], {duration: 160, delay: 2300, fill: 'both'});
+  mark.querySelector('.intro-logo-shine').animate([
+    {opacity: 0, maskPosition: '130% 0', webkitMaskPosition: '130% 0', offset: 0},
+    {opacity: .95, maskPosition: '100% 0', webkitMaskPosition: '100% 0', offset: .16},
+    {opacity: .85, maskPosition: '0% 0', webkitMaskPosition: '0% 0', offset: .82},
+    {opacity: 0, maskPosition: '-30% 0', webkitMaskPosition: '-30% 0', offset: 1}
+  ], {duration: 420, delay: 2350, easing: 'cubic-bezier(.25,.1,.25,1)', fill: 'both'});
+  mark.querySelector('.intro-logo-flare').animate([
+    {opacity: 0, transform: 'scale(.65)', offset: 0},
+    {opacity: .65, transform: 'scale(1.12)', offset: .4},
+    {opacity: 0, transform: 'scale(1.3)', offset: 1}
+  ], {duration: 400, delay: 2460, easing: 'ease-out', fill: 'both'});
+}
 
 function springIn(el, {y = 24, scale = 0.94, delay = 0} = {}) {
   if (reduceMotion()) return el.animate([{opacity: 0}, {opacity: 1}], {duration: 200, delay, fill: 'backwards'});
@@ -18,7 +78,11 @@ function springIn(el, {y = 24, scale = 0.94, delay = 0} = {}) {
 function swap(html) {
   const root = intro();
   root.innerHTML = `<div class="intro-step">${html}</div>`;
-  [...root.querySelector('.intro-step').children].forEach((el, i) => springIn(el, {delay: i * 70}));
+  const step = root.querySelector('.intro-step');
+  [...step.children].forEach((el, i) => {
+    if (el.classList.contains('intro-mark')) logoReady.set(step, revealLogo(el));
+    else springIn(el, {delay: i * 90});
+  });
   return root.querySelector('.intro-step');
 }
 
@@ -28,7 +92,7 @@ async function dismiss() {
   if (!root || root.dataset.leaving) return;
   root.dataset.leaving = '1';
   if (!reduceMotion()) {
-    const img = root.querySelector('.intro-logo');
+    const img = root.querySelector('.intro-mark');
     img?.animate([{transform: 'scale(1)', opacity: 1}, {transform: 'scale(1.35)', opacity: 0}], {duration: 420, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards'});
     [app, tabbar].forEach(el => el.animate(curve.map((v, i) => ({opacity: Math.min(1, i / 14), transform: `${el === tabbar ? 'translateX(-50%) ' : ''}scale(${0.94 + 0.06 * v})`, offset: i / 60})), {duration: 760, delay: 120, easing: 'linear', fill: 'backwards'}));
   }
@@ -57,11 +121,14 @@ export function showWelcome(text = null) {
   const prefs = ctx.state.prefs;
   const line = text || pickGreeting(prefs.name, new Date(), Math.random, prefs.lastGreeting);
   if (!text) { prefs.lastGreeting = line; ctx.commit({render: false}); }
-  swap(`${logo}<h1 class="intro-greeting"></h1><p></p>`);
+  const step = swap(`${logo}<h1 class="intro-greeting"></h1><p></p>`);
   root.querySelector('.intro-greeting').textContent = line;
   root.querySelector('p').textContent = subline();
   root.setAttribute('aria-label', line);
-  const timer = setTimeout(dismiss, reduceMotion() ? 1100 : 1900);
+  let timer;
+  Promise.resolve(logoReady.get(step)).then(() => {
+    if (step.isConnected && !root.dataset.leaving) timer = setTimeout(dismiss, reduceMotion() ? 1100 : 3250);
+  });
   root.addEventListener('click', () => { clearTimeout(timer); dismiss(); }, {once: true});
 }
 

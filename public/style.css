@@ -379,7 +379,17 @@ dialog::backdrop{background:#000000b3;-webkit-backdrop-filter:blur(8px);backdrop
 /* Onboarding and welcome */
 .intro{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));background:radial-gradient(60% 40% at 50% 42%,#2a6bff1f,#0000 70%),#000;text-align:center;overflow:hidden}
 .intro-step{display:flex;flex-direction:column;align-items:center;width:100%;max-width:380px}
-.intro-logo{width:min(46vw,176px);height:auto;aspect-ratio:1;mix-blend-mode:screen;-webkit-mask-image:radial-gradient(closest-side,#000 78%,#0000 100%);mask-image:radial-gradient(closest-side,#000 78%,#0000 100%);user-select:none;-webkit-user-drag:none}
+.intro-mark{position:relative;isolation:isolate;mix-blend-mode:screen;width:min(46vw,176px);aspect-ratio:1;flex:none;pointer-events:none}
+.intro-logo-source{display:none}
+.intro-orbit,.intro-stroke,.intro-logo-finish,.intro-logo-shine{position:absolute;inset:0;display:block;width:100%;height:100%;mix-blend-mode:screen;opacity:0;user-select:none;pointer-events:none;-webkit-user-drag:none}
+.intro-logo-finish{-webkit-mask-image:radial-gradient(circle,#000 48%,transparent 72%);mask-image:radial-gradient(circle,#000 48%,transparent 72%)}
+.intro-orbit{transform-origin:48.4% 47.9%;backface-visibility:hidden}
+.intro-tail-draw{stroke-dasharray:1;stroke-dashoffset:1}
+.intro-logo-shine{object-fit:contain;filter:grayscale(.75) brightness(2.5);-webkit-mask-image:linear-gradient(110deg,transparent 44%,#0009 48%,#000 50%,#0009 52%,transparent 56%);mask-image:linear-gradient(110deg,transparent 44%,#0009 48%,#000 50%,#0009 52%,transparent 56%);-webkit-mask-size:300% 100%;mask-size:300% 100%;-webkit-mask-position:130% 0;mask-position:130% 0;mask-repeat:no-repeat;-webkit-mask-repeat:no-repeat}
+.intro-logo-flare{position:absolute;left:50%;top:51%;width:23%;aspect-ratio:1;background:radial-gradient(ellipse,#fff 0%,#b8edff99 12%,#368dff40 35%,transparent 70%);mix-blend-mode:screen;filter:blur(1px);opacity:0}
+/* Hold the initial image footprint without a flash of the completed mark. */
+.intro-step>.intro-logo{width:min(46vw,176px);height:auto;aspect-ratio:1;opacity:0}
+@media(prefers-reduced-motion:reduce){.intro-logo-shine,.intro-logo-flare{display:none}}
 .intro h1{margin:22px 0 0;font-size:34px;font-weight:700;letter-spacing:-1.2px;line-height:1.1}
 .intro p{margin:12px 0 0;color:var(--muted);font-size:16px;line-height:1.5}
 .intro-greeting{font-size:clamp(30px,9vw,40px)!important}
@@ -387,8 +397,7 @@ dialog::backdrop{background:#000000b3;-webkit-backdrop-filter:blur(8px);backdrop
 .intro-name:focus,.intro-name:focus-visible{outline:none;border-bottom-color:#ffffff80}
 .intro-name::placeholder{color:#ffffff33}
 .intro-button{margin-top:32px}
-.intro:not(:has(h1)) .intro-logo{animation:breathe 1.6s ease-in-out infinite alternate}
-@keyframes breathe{from{opacity:.75;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+
 
 /* Destructive press-and-hold: red fill, plain white label */
 .hold-button.danger{background:#ff5e541f;color:#ff8d86}
