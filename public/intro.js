@@ -46,23 +46,23 @@ async function revealLogo(mark) {
     finish.animate([{opacity: 0}, {opacity: 1}], {duration: 180, fill: 'both'});
     return;
   }
-  // One continuous revolution, a short deceleration, then the separate sparkle.
+  // A quick 600ms turn, then a separate glass sparkle and a brief hold.
   orbit.animate([
     {opacity: 0, transform: 'perspective(600px) rotateY(24deg) rotateZ(-360deg) scale(.92)', filter: 'blur(1.5px)', offset: 0},
     {opacity: 1, transform: 'perspective(600px) rotateY(18deg) rotateZ(-315deg) scale(.96)', filter: 'blur(.4px)', offset: .12},
-    {opacity: 1, transform: 'perspective(600px) rotateY(-12deg) rotateZ(-90deg) scale(1)', filter: 'blur(.3px)', offset: .68, easing: 'cubic-bezier(.12,.45,.18,1)'},
-    {opacity: 1, transform: 'perspective(600px) rotateY(0deg) rotateZ(0deg) scale(1)', filter: 'blur(0px)', offset: .94},
+    {opacity: 1, transform: 'perspective(600px) rotateY(-12deg) rotateZ(-90deg) scale(1)', filter: 'blur(.3px)', offset: .60, easing: 'cubic-bezier(.12,.45,.18,1)'},
+    {opacity: 1, transform: 'perspective(600px) rotateY(0deg) rotateZ(0deg) scale(1)', filter: 'blur(0px)', offset: 5 / 6},
     {opacity: 0, transform: 'perspective(600px) rotateY(0deg) rotateZ(0deg) scale(1)', filter: 'blur(0px)', offset: 1}
-  ], {duration: 1480, easing: 'linear', fill: 'both'});
-  stroke.animate([{opacity: 0}, {opacity: 1, offset: .25}, {opacity: 0}], {duration: 250, delay: 1350, fill: 'both'});
-  draw.animate([{strokeDashoffset: '1'}, {strokeDashoffset: '0'}], {duration: 220, delay: 1350, easing: 'cubic-bezier(.3,0,.15,1)', fill: 'both'});
-  finish.animate([{opacity: 0}, {opacity: 1}], {duration: 100, delay: 1380, fill: 'both'});
+  ], {duration: 720, easing: 'linear', fill: 'both'});
+  stroke.animate([{opacity: 0}, {opacity: 1, offset: .25}, {opacity: 0}], {duration: 250, delay: 600, fill: 'both'});
+  draw.animate([{strokeDashoffset: '1'}, {strokeDashoffset: '0'}], {duration: 220, delay: 600, easing: 'cubic-bezier(.3,0,.15,1)', fill: 'both'});
+  finish.animate([{opacity: 0}, {opacity: 1}], {duration: 100, delay: 620, fill: 'both'});
   mark.querySelector('.intro-logo-shine').animate([
     {opacity: 0, maskPosition: '130% 0', webkitMaskPosition: '130% 0', offset: 0},
     {opacity: .95, maskPosition: '100% 0', webkitMaskPosition: '100% 0', offset: .16},
     {opacity: .85, maskPosition: '0% 0', webkitMaskPosition: '0% 0', offset: .82},
     {opacity: 0, maskPosition: '-30% 0', webkitMaskPosition: '-30% 0', offset: 1}
-  ], {duration: 320, delay: 1410, easing: 'cubic-bezier(.25,.1,.25,1)', fill: 'both'});
+  ], {duration: 400, delay: 660, easing: 'cubic-bezier(.25,.1,.25,1)', fill: 'both'});
   // A small specular glint follows the glass rim before blooming at the stroke.
   mark.querySelector('.intro-logo-flare').animate([
     {opacity: 0, transform: 'translate(28%,-154%) rotate(-28deg) scale(.45)', offset: 0},
@@ -70,7 +70,7 @@ async function revealLogo(mark) {
     {opacity: 1, transform: 'translate(0%,0%) rotate(12deg) scale(1.15)', offset: .57},
     {opacity: .45, transform: 'translate(0%,0%) rotate(18deg) scale(.8)', offset: .76},
     {opacity: 0, transform: 'translate(0%,0%) rotate(22deg) scale(.35)', offset: 1}
-  ], {duration: 410, delay: 1390, easing: 'linear', fill: 'both'});
+  ], {duration: 600, delay: 650, easing: 'linear', fill: 'both'});
 }
 
 function springIn(el, {y = 24, scale = 0.94, delay = 0} = {}) {
@@ -128,10 +128,10 @@ export function showWelcome(text = null) {
   root.querySelector('.intro-greeting').textContent = line;
   root.querySelector('p').textContent = subline();
   root.setAttribute('aria-label', line);
-  // Logo settles at 1800ms; the app finishes entering at 2420ms.
+  // Spin ends at 600ms, sparkle at 1250ms, and app entry at 2050ms.
   let timer;
   Promise.resolve(logoReady.get(step)).then(() => {
-    if (step.isConnected && !root.dataset.leaving) timer = setTimeout(dismiss, reduceMotion() ? 1100 : 1920);
+    if (step.isConnected && !root.dataset.leaving) timer = setTimeout(dismiss, reduceMotion() ? 1100 : 1550);
   });
   root.addEventListener('click', () => { clearTimeout(timer); dismiss(); }, {once: true});
 }
