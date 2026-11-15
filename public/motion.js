@@ -12,7 +12,7 @@ window.addEventListener('resize',()=>document.querySelectorAll('.segmented').for
 // Press feedback: a slight dip while pressed, a spring back on release. Only the
 // press animation itself is undone, never other animations on the page.
 const pressed=new Map();
-document.addEventListener('pointerdown',e=>{const b=e.target.closest('button');if(!b||reduce.matches||b.closest('.swipe-row,.panel-ghost')||b.classList.contains('tile')||b.classList.contains('hold-button'))return;pressed.set(b,b.animate([{transform:'scale(1)'},{transform:'scale(.985)'}],{duration:100,fill:'forwards'}));});
+document.addEventListener('pointerdown',e=>{const b=e.target.closest('button');if(!b||reduce.matches||b.closest('.swipe-row,.panel-ghost,#intro')||b.classList.contains('tile')||b.classList.contains('hold-button'))return;pressed.set(b,b.animate([{transform:'scale(1)'},{transform:'scale(.985)'}],{duration:100,fill:'forwards'}));});
 for(const event of ['pointerup','pointercancel'])document.addEventListener(event,()=>{for(const [b,dip] of pressed){dip.cancel();if(b.isConnected)b.animate(curve.map((v,i)=>({transform:`scale(${.985+.015*v})`,offset:i/60})),{duration:320});}pressed.clear();});
 
 // Press-and-hold confirmation for actions that should never happen by accident.

@@ -1,17 +1,16 @@
 // First-run setup: one full-screen question per step with Back, Skip and a
 // percentage bar. Answers are written straight into the first plan, so going
 // back shows what was entered, and any step can be skipped.
-import {ctx, esc, money, cash} from './context.js?v=35';
-import {icon} from './icons.js?v=35';
-import {samples, reduceMotion, slideToConfirm, movePill} from './motion.js?v=35';
-import {calculate, uid, usesTakeHome} from './finance.js?v=35';
+import {ctx, esc, money, cash} from './context.js?v=37';
+import {icon} from './icons.js?v=37';
+import {reduceMotion, slideToConfirm, movePill} from './motion.js?v=37';
+import {blank, calculate, isUntouched, uid, usesTakeHome} from './finance.js?v=37';
 
-import {CATEGORIES, STEPS, percentAt} from './setup-steps.js?v=35';
+import {CATEGORIES, STEPS, percentAt} from './setup-steps.js?v=37';
+import {stateSelect} from './plans-view.js?v=37';
 
-const curve = samples(260, 26);
-// Critically damped: pages travel together and stop without bouncing.
-const push = samples(200, 28.3);
-const PUSH_MS = 680;
+// A plain carousel: both pages slide one screen width on the same ease.
+const PUSH_MS = 380, PUSH_EASE = 'cubic-bezier(.32,.72,0,1)';
 const parse = text => { const n = Number(String(text).replace(/[^\d.]/g, '')); return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0; };
 // Live thousands separators while typing, keeping up to two decimals.
 function formatTyping(raw) {
@@ -37,6 +36,18 @@ function setExpense(plan, name, amount) {
  */
 export function startSetup(root, {back, finish}) {
   let index = 0;
+  // Setup always fills a fresh, empty plan. Plans carried over from an earlier
+  // version stay under All plans but never pre-fill these screens.
+  // Coming back to an unfinished setup resumes the plan it started.
+  const prefs = ctx.state.prefs, resumed = ctx.state.plans.find(p => p.id === prefs.setupPlanId);
+  if (resumed) ctx.state.currentPlanId = resumed.id;
+  else if (!isUntouched(ctx.plan())) {
+    const fresh = blank();
+    ctx.state.plans.unshift(fresh);
+    ctx.state.currentPlanId = fresh.id;
+  }
+  prefs.setupPlanId = ctx.state.currentPlanId;
+  ctx.commit({render: false});
   root.innerHTML = `<div class="setup">
     <div class="setup-top">
       <button type="button" class="round-button setup-back" aria-label="Back">${icon('chevron')}</button>
@@ -100,14 +111,13 @@ export function startSetup(root, {back, finish}) {
       return;
     }
     if (!old) {
-      // First screen: ease in from the side with nothing leaving.
-      page.animate(curve.map((v, n) => ({opacity: Math.min(1, n / 12), transform: `translateX(${(1 - v) * direction * 40}px)`, offset: n / 60})), {duration: 600, easing: 'linear', fill: 'backwards'});
+      // First screen: slide in from the side with nothing leaving.
+      page.animate([{opacity: 0, transform: `translateX(${direction * 40}px)`}, {opacity: 1, transform: 'none'}], {duration: PUSH_MS, easing: PUSH_EASE, fill: 'backwards'});
       return;
     }
     const w = stage.clientWidth;
-    const slide = (from, to) => push.map((v, n) => ({transform: `translateX(${from + (to - from) * v}px)`, offset: n / (push.length - 1)}));
-    const incoming = page.animate(slide(direction * w, 0), {duration: PUSH_MS, easing: 'linear', fill: 'backwards'});
-    const outgoing = old.animate(slide(0, -direction * w), {duration: PUSH_MS, easing: 'linear', fill: 'forwards'});
+    const incoming = page.animate([{transform: `translateX(${direction * w}px)`}, {transform: 'translateX(0)'}], {duration: PUSH_MS, easing: PUSH_EASE, fill: 'backwards'});
+    const outgoing = old.animate([{transform: 'translateX(0)'}, {transform: `translateX(${-direction * w}px)`}], {duration: PUSH_MS, easing: PUSH_EASE, fill: 'forwards'});
     moving = [incoming, outgoing];
     outgoing.finished.then(() => old.remove(), () => old.remove());
     incoming.finished.then(() => { if (moving?.[0] === incoming) moving = null; }, () => {});
@@ -125,12 +135,17 @@ export function startSetup(root, {back, finish}) {
 
   function planHTML() {
     const p = plan(), takeHome = usesTakeHome(p);
-    return `<h1>Your plan</h1><p>Name it and add what you earn. You can compare other plans later.</p>
+    return `<h1>Your plan</h1><p>Name it and add what you earn.</p>
       <label class="text-field"><span>Plan name</span><input class="setup-plan-name" type="text" maxlength="80" enterkeyhint="next" placeholder="Current job, New offer…" value="${p.name === 'My plan' ? '' : esc(p.name)}"></label>
       <div class="segmented setup-income-mode"><span class="pace-lens" aria-hidden="true"></span><button type="button" data-mode="salary" class="${takeHome ? '' : 'selected'}" aria-pressed="${!takeHome}">Salary / year</button><button type="button" data-mode="takehome" class="${takeHome ? 'selected' : ''}" aria-pressed="${takeHome}">Take-home / month</button></div>
       ${amountField(takeHome ? p.takeHome : p.salary, takeHome ? 'Monthly take-home pay' : 'Annual salary', takeHome ? '/ month' : '/ year')}
-      <p class="fine setup-income-note">${takeHome ? 'What lands in your account each month after taxes and deductions.' : 'Before tax. Quasar estimates take-home for a single filer in Colorado.'}</p>
+      <div class="setup-income-extra">${incomeExtra(takeHome)}</div>
       <button type="button" class="button primary setup-next">Continue</button>`;
+  }
+
+  // Salary mode picks the state for the tax estimate; take-home needs no estimate.
+  function incomeExtra(takeHome) {
+    return takeHome ? '<p class="fine">What lands in your account each month after taxes and deductions.</p>' : stateSelect(plan().state);
   }
 
   function categoryHTML(cat) {
@@ -156,7 +171,19 @@ export function startSetup(root, {back, finish}) {
     const continueButton = page.querySelector('.setup-next');
     const enter = (input, action) => input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); e.stopPropagation(); action(); } });
     const amount = page.querySelector('.setup-amount input');
-    if (amount) amount.addEventListener('input', () => { amount.value = formatTyping(amount.value); });
+    // Width follows the digits (plus room for the clear button once there's a value).
+    const fit = () => {
+      if (!amount) return;
+      const n = amount.value.length, editing = document.activeElement === amount && n > 0;
+      amount.style.fontSize = n > 7 ? '42px' : n > 5 ? '48px' : '';
+      amount.style.width = `calc(${Math.max(1, n) + 0.2}ch${editing ? ' + 40px' : ''})`;
+    };
+    if (amount) {
+      amount.addEventListener('input', () => { amount.value = formatTyping(amount.value); fit(); });
+      amount.addEventListener('focus', fit);
+      amount.addEventListener('blur', fit);
+      fit();
+    }
 
     if (id === 'name') {
       const input = page.querySelector('input');
@@ -173,21 +200,21 @@ export function startSetup(root, {back, finish}) {
         save();
       };
       name.addEventListener('input', store);
+      page.addEventListener('change', e => { if (e.target.matches('[data-state]')) { plan().state = e.target.value; save(); } });
       amount.addEventListener('input', store);
       seg.addEventListener('click', e => {
         const b = e.target.closest('[data-mode]');
         if (!b) return;
         plan().incomeMode = b.dataset.mode;
         save();
-        const fresh = document.createElement('div');
-        fresh.innerHTML = planHTML();
         const mode = b.dataset.mode === 'takehome';
         seg.querySelectorAll('button').forEach(x => { const on = x === b; x.classList.toggle('selected', on); x.setAttribute('aria-pressed', String(on)); });
         movePill(seg);
         amount.value = shown(mode ? plan().takeHome : plan().salary);
+        fit();
         amount.setAttribute('aria-label', mode ? 'Monthly take-home pay' : 'Annual salary');
         page.querySelector('.setup-amount em').textContent = mode ? '/ month' : '/ year';
-        page.querySelector('.setup-income-note').textContent = fresh.querySelector('.setup-income-note').textContent;
+        page.querySelector('.setup-income-extra').innerHTML = incomeExtra(mode);
         amount.focus({preventScroll: true});
       });
       requestAnimationFrame(() => movePill(seg));

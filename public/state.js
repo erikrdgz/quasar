@@ -1,6 +1,6 @@
 // App state shape, legacy migration and backup validation. Pure, so it is testable in Node.
-import {blank, validatePlan} from './finance.js?v=35';
-import {validateBudget, validateMonth} from './ledger.js?v=35';
+import {blank, validatePlan} from './finance.js?v=37';
+import {validateBudget, validateMonth} from './ledger.js?v=37';
 
 export const LEGACY_KEY = 'room-plans-v1';
 export const STATE_VERSION = 2;
@@ -33,8 +33,9 @@ export function validateState(raw) {
       installDismissed: !!raw.prefs?.installDismissed,
       name: typeof raw.prefs?.name === 'string' ? raw.prefs.name.trim().slice(0, 40) : '',
       lastGreeting: typeof raw.prefs?.lastGreeting === 'string' ? raw.prefs.lastGreeting.slice(0, 80) : '',
-      // Anyone who already gave a name finished the original onboarding.
-      onboarded: !!raw.prefs?.onboarded || (typeof raw.prefs?.name === 'string' && !!raw.prefs.name.trim()),
+      setupPlanId: typeof raw.prefs?.setupPlanId === 'string' ? raw.prefs.setupPlanId : '',
+      // Only data from before this flag existed infers it from having a name.
+      onboarded: typeof raw.prefs?.onboarded === 'boolean' ? raw.prefs.onboarded : typeof raw.prefs?.name === 'string' && !!raw.prefs.name.trim(),
     },
   };
 }

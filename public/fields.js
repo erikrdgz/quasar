@@ -3,7 +3,7 @@
 //    right edge; clearing keeps focus so the keyboard stays up,
 //  • focusing a field puts the cursor at the end, not the start,
 //  • number fields ([data-num]) accept only digits and one decimal point.
-import {icon} from './icons.js?v=35';
+import {icon} from './icons.js?v=37';
 
 const TEXT_FIELDS = 'input[type=text], input[type=search], input[type=email], input[type=tel], input[type=url], input:not([type])';
 const isTextField = el => el instanceof HTMLInputElement && el.matches(TEXT_FIELDS) && !el.matches('[data-no-clear]');
@@ -33,6 +33,8 @@ const hostOf = input => input.closest('dialog') || document.body;
 function place() {
   const input = current;
   if (!input || !input.isConnected || !input.value || input.readOnly || input.disabled) { button.hidden = true; input?.classList.remove('has-clear'); return; }
+  // Don't chase a field while its screen is sliding; show it once it settles.
+  if (input.closest('.setup-page')?.getAnimations().some(a => a.playState === 'running')) { button.hidden = true; return; }
   const r = input.getBoundingClientRect();
   if (!r.width) { button.hidden = true; return; }
   if (button.parentElement !== hostOf(input)) hostOf(input).append(button);
@@ -79,4 +81,4 @@ document.addEventListener('input', e => {
 addEventListener('resize', place);
 document.addEventListener('scroll', () => { if (current) place(); }, true);
 // Panels and pages animate fields into place; follow them for a moment after focus.
-document.addEventListener('focusin', () => { let frames = 0; const follow = () => { if (!current || ++frames > 40) return; place(); requestAnimationFrame(follow); }; requestAnimationFrame(follow); });
+document.addEventListener('focusin', () => { let frames = 0; const follow = () => { if (!current || ++frames > 60) return; place(); requestAnimationFrame(follow); }; requestAnimationFrame(follow); });

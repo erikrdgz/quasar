@@ -1,17 +1,23 @@
 // Plans: compare salary scenarios. Each tile expands into its editor; a live
 // "left / month" readout in the panel header shows the effect while you drag.
-import {ctx, $, esc, money, cash, compact, toast} from './context.js?v=35';
-import {icon} from './icons.js?v=35';
-import {openPanel} from './expand.js?v=35';
-import {syncRange} from './sliders.js?v=35';
-import {attachSwipe} from './swipe.js?v=35';
-import {movePill, reduceMotion, slideToConfirm, springIn, springText} from './motion.js?v=35';
-import {calculate, uid, spendingLimit, minimumSalary, carPriceRange, CAR_PRICE_ASSUMPTIONS, usesTakeHome, taxes, GOAL_ICONS, goalIcon, GOAL_COLORS, goalColor} from './finance.js?v=35';
-import {createBudget, lockIn, unlock} from './ledger.js?v=35';
-import {persist} from './store.js?v=35';
+import {ctx, $, esc, money, cash, compact, toast} from './context.js?v=37';
+import {icon} from './icons.js?v=37';
+import {openPanel} from './expand.js?v=37';
+import {syncRange} from './sliders.js?v=37';
+import {attachSwipe} from './swipe.js?v=37';
+import {movePill, reduceMotion, slideToConfirm, springIn, springText} from './motion.js?v=37';
+import {calculate, uid, spendingLimit, minimumSalary, carPriceRange, CAR_PRICE_ASSUMPTIONS, usesTakeHome, taxes, GOAL_ICONS, goalIcon, GOAL_COLORS, goalColor} from './finance.js?v=37';
+import {createBudget, lockIn, unlock} from './ledger.js?v=37';
+import {persist} from './store.js?v=37';
+import {STATES, stateName, hasIncomeTax} from './states.js?v=37';
 
 // Inline custom property for a goal's optional color.
 const tint = g => (goalColor(g) ? ` style="--goal:${goalColor(g)}"` : '');
+// State picker shared by the Income editor and setup.
+export function stateSelect(code) {
+  return `<label class="state-row"><span>State</span><span class="select-wrap"><select data-state aria-label="State for tax estimate">${STATES.map(([c, n]) => `<option value="${c}"${c === code ? ' selected' : ''}>${n}</option>`).join('')}</select>${icon('chevron')}</span></label>`;
+}
+export const taxNote = code => `2026 estimate for a single filer in ${stateName(code)}${hasIncomeTax(code) ? ', using its brackets, standard deduction and exemption' : ', which has no wage income tax'}. Excludes local taxes and most credits.`;
 const numeric = el => Math.max(0, Number(el.value) || 0);
 const rentOf = plan => plan.expenses.find(e => /\brent\b/i.test(e.name));
 const lockedHere = plan => ctx.state.budget?.planId === plan.id;
@@ -144,8 +150,9 @@ function openIncome(origin) {
         fields.innerHTML = mode === 'salary' ? `
           <div><label class="amount-field"><span>$</span><input id="salaryInput" type="text" data-num inputmode="numeric" min="0" max="1000000" step="1000" value="${plan.salary}" aria-label="Annual salary" enterkeyhint="done"></label><p class="fine" style="margin-top:8px">per year, before tax</p></div>
           <div><input id="salarySlider" type="range" aria-label="Annual salary slider"><div class="range-labels"><span id="salaryMin"></span><span id="salaryMax"></span></div></div>
-          <div class="group switch-row"><span>Colorado FAMLI<small>0.44% paid-leave premium</small></span><label class="switch"><input type="checkbox" role="switch" id="famli" ${plan.famli ? 'checked' : ''}><i></i></label></div>
-          <p class="fine">Estimated for a 2026 single filer in Colorado with the standard deduction. If you live elsewhere or have pre-tax deductions like a 401(k) or health insurance, use Take-home for an exact number.</p>` : `
+          ${stateSelect(plan.state)}
+          ${plan.state === 'CO' ? `<div class="group switch-row"><span>Colorado FAMLI<small>0.44% paid-leave premium</small></span><label class="switch"><input type="checkbox" role="switch" id="famli" ${plan.famli ? 'checked' : ''}><i></i></label></div>` : ''}
+          <p class="fine">${taxNote(plan.state)} With pre-tax deductions like a 401(k) or health insurance, use Take-home for an exact number.</p>` : `
           <div><label class="amount-field"><span>$</span><input id="takeHomeInput" type="text" data-num inputmode="decimal" min="0" max="1000000" step="1" value="${plan.takeHome}" aria-label="Monthly take-home pay" enterkeyhint="done"></label><p class="fine" style="margin-top:8px">per month, after taxes and deductions</p></div>
           <p class="fine">Use what actually lands in your account in a typical month. Paid every two weeks? One paycheck × 26 ÷ 12.</p>`;
         setLimits(body);
@@ -175,6 +182,7 @@ function openIncome(origin) {
           if (plan.salary !== v) toast(v < min ? 'Minimum income to cover this plan' : 'Maximum $1,000,000');
           e.target.value = plan.salary; ctx.commit(); setLimits(body); update();
         } else if (e.target.id === 'famli') { plan.famli = e.target.checked; ctx.commit(); update(); }
+        else if (e.target.matches('[data-state]')) { plan.state = e.target.value; ctx.commit(); draw(); }
         else if (e.target.id === 'takeHomeInput') {
           const c = calculate(plan);
           if (c.available < 0) toast('Take-home is lower than your bills and car');
@@ -195,19 +203,19 @@ function openNet(origin) {
         body.innerHTML = `<div><p class="group-title">Each month</p><div class="big-number">${money(c.net)}</div></div><div class="group rows"><div><span>Entered take-home</span><b>${cash(plan.takeHome)}</b></div><div><span>Per year</span><b>${money(plan.takeHome * 12)}</b></div><div><span>Per biweekly paycheck</span><b>${money(plan.takeHome * 12 / 26)}</b></div></div><p class="fine">You entered take-home pay directly, so no tax estimate is applied. Switch to “From salary” in Income for the Colorado estimate.</p>`;
         return;
       }
-      const t = taxes(plan.salary, plan.famli), m = n => `−${cash(n / 12)}`;
+      const t = taxes(plan.salary, plan.famli, plan.state), m = n => `−${cash(n / 12)}`;
       body.innerHTML = `<div><p class="group-title">Each month</p><div class="big-number">${money(c.net)}</div></div>
         <div class="group rows">
           <div><span>Gross pay</span><b>${cash(plan.salary / 12)}</b></div>
           <div class="minus"><span>Federal income tax</span><b>${m(t.federal)}</b></div>
-          <div class="minus"><span>Colorado income tax</span><b>${m(t.state)}</b></div>
+          <div class="minus"><span>${hasIncomeTax(plan.state) ? `${stateName(plan.state)} income tax` : `${stateName(plan.state)}: no income tax`}</span><b>${m(t.state)}</b></div>
           <div class="minus"><span>Social Security</span><b>${m(t.ss)}</b></div>
           <div class="minus"><span>Medicare</span><b>${m(t.medicare)}</b></div>
-          ${plan.famli ? `<div class="minus"><span>FAMLI</span><b>${m(t.leave)}</b></div>` : ''}
+          ${t.leave ? `<div class="minus"><span>FAMLI</span><b>${m(t.leave)}</b></div>` : ''}
           <div class="total"><span>Take-home</span><b>${cash(c.net)}</b></div>
         </div>
         <div class="group rows"><div><span>Per biweekly paycheck</span><b>${money(c.net * 12 / 26)}</b></div><div><span>Effective tax rate</span><b>${plan.salary ? (t.total / plan.salary * 100).toFixed(1) : '0.0'}%</b></div></div>
-        <p class="fine">2026 single filer, Colorado, W-2 wages, $16,100 standard deduction. No credits, pre-tax benefits or local taxes.</p>`;
+        <p class="fine">${taxNote(plan.state)} Federal: $16,100 standard deduction, W-2 wages. State figures from the Tax Foundation's 2026 table.</p>`;
     },
   });
 }

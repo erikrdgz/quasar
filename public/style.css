@@ -562,3 +562,35 @@ input.has-clear{padding-right:38px!important}
 /* Setup pages slide side by side inside a clipped stage. */
 .setup-stage{overflow:hidden}
 .setup-page{will-change:transform}
+
+/* Setup moves are plain: no spring overshoot on buttons or the progress bar. */
+.setup .button{transition:opacity .2s}
+.setup .button:active{transform:none;opacity:.85}
+.setup-progress span{transition:width .38s cubic-bezier(.32,.72,0,1)}
+
+/* Compact setup screens: Continue sits right under the answer, above the keyboard. */
+.setup-page{padding:min(3vh,24px) 24px calc(24px + env(safe-area-inset-bottom))}
+.setup-icon{width:48px;height:48px;margin-bottom:12px;border-radius:15px}
+.setup-icon .fa-icon{width:22px;height:22px}
+.setup-page h1{font-size:28px;letter-spacing:-.9px}
+.setup-page>p{margin-top:6px;font-size:15px}
+.setup-page .setup-amount{display:flex;justify-content:center;align-items:baseline;gap:4px;width:100%;margin-top:20px;padding:0 0 8px}
+.setup-amount span{font-size:34px}
+.setup-amount input{flex:none;width:1.2ch;min-width:1.2ch;max-width:calc(10ch + 40px);font-size:52px;letter-spacing:-1.6px;text-align:left}
+.setup-amount em{margin-left:6px}
+.setup-page>.button{margin-top:18px}
+.setup-page>.text-button{margin-top:10px}
+.setup-page .text-field{margin-top:18px}
+.setup-page .segmented{margin-top:12px}
+.setup-page .fine{margin-top:8px}
+.setup-page .intro-name{margin-top:20px}
+.setup-left{margin-top:16px}
+
+/* State picker */
+.state-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:6px 6px 6px 16px;border-radius:18px;background:#ffffff08;border:1px solid var(--line);font-size:15px;color:var(--soft);text-align:left}
+.select-wrap{position:relative;display:flex;align-items:center;flex:1;max-width:220px}
+.select-wrap select{width:100%;appearance:none;-webkit-appearance:none;padding:11px 34px 11px 14px;border:0;border-radius:13px;background:#ffffff12;color:var(--text);font-size:16px;font-weight:600;text-align:right;text-align-last:right;cursor:pointer}
+.select-wrap select:focus-visible{outline:2px solid #ffffffb3;outline-offset:2px}
+.select-wrap .fa-icon{position:absolute;right:12px;width:11px;height:11px;color:var(--muted);pointer-events:none}
+.setup-page .state-row{margin-top:12px}
+.setup-income-extra{width:100%}
