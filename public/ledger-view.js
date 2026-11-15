@@ -1,12 +1,12 @@
 // Ledger: this month's purchases, period stats, reality check, close month, history.
-import {ctx, $, esc, money, cash} from './context.js?v=44';
-import {icon} from './icons.js?v=44';
-import {attachSwipe} from './swipe.js?v=44';
-import {movePill} from './motion.js?v=44';
-import {closedMonths, monthKey, monthName, openMonthOf, periodStats, realityGap, totals} from './ledger.js?v=44';
-import {deleteEntry, openPurchase} from './purchase.js?v=44';
-import {entryRow, openCloseMonth, openHistoryMonth, openRealityCheck} from './month-flows.js?v=44';
-import {donut, legend} from './today.js?v=44';
+import {ctx, $, esc, money, cash} from './context.js?v=45';
+import {icon} from './icons.js?v=45';
+import {attachSwipe} from './swipe.js?v=45';
+import {movePill} from './motion.js?v=45';
+import {closedMonths, monthKey, monthName, openMonthOf, periodStats, realityGap, totals} from './ledger.js?v=45';
+import {deleteEntry, openPurchase} from './purchase.js?v=45';
+import {entryRow, openCloseMonth, openHistoryMonth, openRealityCheck} from './month-flows.js?v=45';
+import {donut, legend} from './today.js?v=45';
 
 let period = 1;
 const PERIOD_LABEL = {1: 'This month', 3: 'Last 3 months', 12: 'Last 12 months'};

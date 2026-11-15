@@ -8,8 +8,8 @@
 //   • the app behind, which recedes and dims.
 // Geometry is always measured with the app unscaled, and a close that interrupts
 // an open reverses from wherever the card is at that moment.
-import {icon} from './icons.js?v=44';
-import {reduceMotion} from './motion.js?v=44';
+import {icon} from './icons.js?v=45';
+import {reduceMotion} from './motion.js?v=45';
 
 // iOS-style spring described by response (seconds) and damping ratio.
 function spring(response, dampingRatio) {
@@ -186,7 +186,13 @@ export function openPanel(origin, opts) {
   layer.querySelector('.panel-close').addEventListener('click', () => close());
   backdrop.addEventListener('click', () => close());
 
+  // Runs once. Closing also has a deadline: if the browser never reports the
+  // close animation as finished (it can happen on iOS), the screen still unlocks.
+  let cleaned = false;
+  const withDeadline = animation => Promise.race([animation, new Promise(resolve => setTimeout(resolve, 1500))]).then(cleanup, cleanup);
   function cleanup() {
+    if (cleaned) return;
+    cleaned = true;
     document.removeEventListener('keydown', onKey);
     running.forEach(a => a.cancel());
     layer.remove();
@@ -217,7 +223,7 @@ export function openPanel(origin, opts) {
     running.forEach(a => a.cancel());
     const tile = findOrigin();
     if (reduceMotion() || !tile) {
-      return (closed = layer.animate([{opacity: 1}, {opacity: 0}], {duration: 160}).finished.then(cleanup));
+      return (closed = withDeadline(layer.animate([{opacity: 1}, {opacity: 0}], {duration: 160}).finished));
     }
     tile.classList.add('is-origin');
     const back = rectOf(tile);
@@ -225,7 +231,7 @@ export function openPanel(origin, opts) {
     const fresh = cloneTile(tile, back);
     ghost.replaceWith(fresh);
     ghost = fresh;
-    return (closed = animate(CLOSE, p0, 0, back, radiusOf(tile), back, 'close').then(cleanup, cleanup));
+    return (closed = withDeadline(animate(CLOSE, p0, 0, back, radiusOf(tile), back, 'close')));
   }
 
   stack.push(api);

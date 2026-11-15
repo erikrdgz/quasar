@@ -1,6 +1,6 @@
 // App state shape, legacy migration and backup validation. Pure, so it is testable in Node.
-import {blank, validatePlan} from './finance.js?v=44';
-import {validateBudget, validateMonth} from './ledger.js?v=44';
+import {blank, validatePlan} from './finance.js?v=45';
+import {validateBudget, validateMonth} from './ledger.js?v=45';
 
 export const LEGACY_KEY = 'room-plans-v1';
 export const STATE_VERSION = 2;

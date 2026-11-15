@@ -1,9 +1,9 @@
 // Add / edit purchase sheet: amount → optional name → category → Add.
-import {ctx, $, esc, money, cash, toast} from './context.js?v=44';
-import {icon} from './icons.js?v=44';
-import {openPanel} from './expand.js?v=44';
-import {CATEGORIES, category, makeEntry, openMonthOf, totals} from './ledger.js?v=44';
-import {persist} from './store.js?v=44';
+import {ctx, $, esc, money, cash, toast} from './context.js?v=45';
+import {icon} from './icons.js?v=45';
+import {openPanel} from './expand.js?v=45';
+import {CATEGORIES, category, makeEntry, openMonthOf, totals} from './ledger.js?v=45';
+import {persist} from './store.js?v=45';
 
 const parseAmount = text => { const n = Number(String(text).replace(/[$,\s]/g, '')); return Number.isFinite(n) ? Math.round(n * 100) / 100 : NaN; };
 

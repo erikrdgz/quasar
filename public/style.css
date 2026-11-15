@@ -358,7 +358,7 @@ dialog::backdrop{background:#000000b3;-webkit-backdrop-filter:blur(8px);backdrop
 .modal-section{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
 .modal-section h3{margin:0 0 6px;font-size:15px}
 .modal-section p{margin:0 0 14px}
-#toast{position:fixed;z-index:60;left:50%;top:calc(env(safe-area-inset-top) + 10px);transform:translateX(-50%);display:none;align-items:center;gap:6px;max-width:calc(100% - 32px);padding:12px 12px 12px 18px;border-radius:999px;background:#1d1d22f2;border:1px solid var(--line-strong);box-shadow:0 12px 30px #000a;font-size:14px;white-space:nowrap}
+#toast{position:fixed;z-index:60;left:50%;top:calc(env(safe-area-inset-top) + 10px);transform:translateX(-50%);display:none;align-items:center;gap:6px;max-width:calc(100% - 32px);padding:12px 12px 12px 18px;border-radius:999px;background:#1d1d22;border:1px solid var(--line-strong);box-shadow:0 12px 30px #000a;font-size:14px;white-space:nowrap}
 #toast.is-visible{display:flex;animation:toast-in .45s var(--spring);pointer-events:none}
 #toast button{pointer-events:auto}
 #toast:not(:has(button)){padding-right:18px}
