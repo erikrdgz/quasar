@@ -53,16 +53,16 @@ async function revealLogo(mark) {
     {opacity: 1, transform: 'perspective(600px) rotateY(-12deg) rotateZ(-90deg) scale(1)', filter: 'blur(.3px)', offset: .68, easing: 'cubic-bezier(.12,.45,.18,1)'},
     {opacity: 1, transform: 'perspective(600px) rotateY(0deg) rotateZ(0deg) scale(1)', filter: 'blur(0px)', offset: .94},
     {opacity: 0, transform: 'perspective(600px) rotateY(0deg) rotateZ(0deg) scale(1)', filter: 'blur(0px)', offset: 1}
-  ], {duration: 2460, easing: 'linear', fill: 'both'});
-  stroke.animate([{opacity: 0}, {opacity: 1, offset: .25}, {opacity: 0}], {duration: 350, delay: 2250, fill: 'both'});
-  draw.animate([{strokeDashoffset: '1'}, {strokeDashoffset: '0'}], {duration: 280, delay: 2250, easing: 'cubic-bezier(.3,0,.15,1)', fill: 'both'});
-  finish.animate([{opacity: 0}, {opacity: 1}], {duration: 160, delay: 2300, fill: 'both'});
+  ], {duration: 1480, easing: 'linear', fill: 'both'});
+  stroke.animate([{opacity: 0}, {opacity: 1, offset: .25}, {opacity: 0}], {duration: 250, delay: 1350, fill: 'both'});
+  draw.animate([{strokeDashoffset: '1'}, {strokeDashoffset: '0'}], {duration: 220, delay: 1350, easing: 'cubic-bezier(.3,0,.15,1)', fill: 'both'});
+  finish.animate([{opacity: 0}, {opacity: 1}], {duration: 100, delay: 1380, fill: 'both'});
   mark.querySelector('.intro-logo-shine').animate([
     {opacity: 0, maskPosition: '130% 0', webkitMaskPosition: '130% 0', offset: 0},
     {opacity: .95, maskPosition: '100% 0', webkitMaskPosition: '100% 0', offset: .16},
     {opacity: .85, maskPosition: '0% 0', webkitMaskPosition: '0% 0', offset: .82},
     {opacity: 0, maskPosition: '-30% 0', webkitMaskPosition: '-30% 0', offset: 1}
-  ], {duration: 420, delay: 2350, easing: 'cubic-bezier(.25,.1,.25,1)', fill: 'both'});
+  ], {duration: 320, delay: 1410, easing: 'cubic-bezier(.25,.1,.25,1)', fill: 'both'});
   // A small specular glint follows the glass rim before blooming at the stroke.
   mark.querySelector('.intro-logo-flare').animate([
     {opacity: 0, transform: 'translate(28%,-154%) rotate(-28deg) scale(.45)', offset: 0},
@@ -70,7 +70,7 @@ async function revealLogo(mark) {
     {opacity: 1, transform: 'translate(0%,0%) rotate(12deg) scale(1.15)', offset: .57},
     {opacity: .45, transform: 'translate(0%,0%) rotate(18deg) scale(.8)', offset: .76},
     {opacity: 0, transform: 'translate(0%,0%) rotate(22deg) scale(.35)', offset: 1}
-  ], {duration: 700, delay: 2310, easing: 'linear', fill: 'both'});
+  ], {duration: 410, delay: 1390, easing: 'linear', fill: 'both'});
 }
 
 function springIn(el, {y = 24, scale = 0.94, delay = 0} = {}) {
@@ -97,7 +97,7 @@ async function dismiss() {
   if (!reduceMotion()) {
     const img = root.querySelector('.intro-mark');
     img?.animate([{transform: 'scale(1)', opacity: 1}, {transform: 'scale(1.35)', opacity: 0}], {duration: 420, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards'});
-    [app, tabbar].forEach(el => el.animate(curve.map((v, i) => ({opacity: Math.min(1, i / 14), transform: `${el === tabbar ? 'translateX(-50%) ' : ''}scale(${0.94 + 0.06 * v})`, offset: i / 60})), {duration: 760, delay: 120, easing: 'linear', fill: 'backwards'}));
+    [app, tabbar].forEach(el => el.animate(curve.map((v, i) => ({opacity: Math.min(1, i / 14), transform: `${el === tabbar ? 'translateX(-50%) ' : ''}scale(${0.94 + 0.06 * v})`, offset: i / 60})), {duration: 420, delay: 80, easing: 'linear', fill: 'backwards'}));
   }
   await root.animate([{opacity: 1}, {opacity: 0}], {duration: reduceMotion() ? 160 : 380, delay: reduceMotion() ? 0 : 80, easing: 'ease-out', fill: 'forwards'}).finished;
   root.remove();
@@ -128,9 +128,10 @@ export function showWelcome(text = null) {
   root.querySelector('.intro-greeting').textContent = line;
   root.querySelector('p').textContent = subline();
   root.setAttribute('aria-label', line);
+  // Logo settles at 1800ms; the app finishes entering at 2420ms.
   let timer;
   Promise.resolve(logoReady.get(step)).then(() => {
-    if (step.isConnected && !root.dataset.leaving) timer = setTimeout(dismiss, reduceMotion() ? 1100 : 3250);
+    if (step.isConnected && !root.dataset.leaving) timer = setTimeout(dismiss, reduceMotion() ? 1100 : 1920);
   });
   root.addEventListener('click', () => { clearTimeout(timer); dismiss(); }, {once: true});
 }
