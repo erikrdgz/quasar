@@ -1,15 +1,15 @@
 // Plans: compare salary scenarios. Each tile expands into its editor; a live
 // "left / month" readout in the panel header shows the effect while you drag.
-import {ctx, $, esc, money, cash, compact, toast} from './context.js?v=37';
-import {icon} from './icons.js?v=37';
-import {openPanel} from './expand.js?v=37';
-import {syncRange} from './sliders.js?v=37';
-import {attachSwipe} from './swipe.js?v=37';
-import {movePill, reduceMotion, slideToConfirm, springIn, springText} from './motion.js?v=37';
-import {calculate, uid, spendingLimit, minimumSalary, carPriceRange, CAR_PRICE_ASSUMPTIONS, usesTakeHome, taxes, GOAL_ICONS, goalIcon, GOAL_COLORS, goalColor} from './finance.js?v=37';
-import {createBudget, lockIn, unlock} from './ledger.js?v=37';
-import {persist} from './store.js?v=37';
-import {STATES, stateName, hasIncomeTax} from './states.js?v=37';
+import {ctx, $, esc, money, cash, compact, toast} from './context.js?v=39';
+import {icon} from './icons.js?v=39';
+import {openPanel} from './expand.js?v=39';
+import {syncRange} from './sliders.js?v=39';
+import {attachSwipe} from './swipe.js?v=39';
+import {movePill, reduceMotion, slideToConfirm, springIn, springText} from './motion.js?v=39';
+import {calculate, uid, minimumSalary, spendingLimit, sliderRange, carPriceRange, CAR_PRICE_ASSUMPTIONS, usesTakeHome, taxes, GOAL_ICONS, goalIcon, GOAL_COLORS, goalColor} from './finance.js?v=39';
+import {createBudget, lockIn, unlock} from './ledger.js?v=39';
+import {persist} from './store.js?v=39';
+import {STATES, stateName, hasIncomeTax} from './states.js?v=39';
 
 // Inline custom property for a goal's optional color.
 const tint = g => (goalColor(g) ? ` style="--goal:${goalColor(g)}"` : '');
@@ -84,37 +84,46 @@ function readout(api) {
   return update;
 }
 
-function setLimits(body) {
+// Sliders size themselves to the amount (see sliderRange). The slider being
+// dragged keeps its range until it's released, so the thumb never runs away.
+// The only hard limit is what you make: `cap` (most this amount can be) and
+// `floor` (least it can be) clip the smart range when they're tighter.
+function fitRange(range, value, base, minStep = 1, hold = null, {floor = 0, cap = Infinity} = {}) {
+  if (range !== hold) {
+    const r = sliderRange(value, base), step = Math.max(minStep, r.step);
+    const min = Math.min(Math.ceil(floor / step) * step, value), max = Math.max(min, Math.min(r.max, Math.floor(cap)));
+    Object.assign(range, {min, max, step});
+  }
+  range.value = value;
+  syncRange(range);
+  return Number(range.max);
+}
+
+function setLimits(body, hold = null) {
   const plan = ctx.plan();
   const salary = body.querySelector('#salarySlider');
   if (salary) {
-    const floor = minimumSalary(plan), min = Math.ceil(floor / 5000) * 5000, max = Math.ceil(Math.max(300000, plan.salary, min) / 5000) * 5000;
-    Object.assign(salary, {min, max, step: 5000});
-    salary.value = plan.salary;
-    body.querySelector('#salaryMin').textContent = compact(min);
+    const max = fitRange(salary, plan.salary, 300000, 5000, hold, {floor: minimumSalary(plan)});
+    body.querySelector('#salaryMin').textContent = compact(Number(salary.min));
     body.querySelector('#salaryMax').textContent = compact(max);
-    syncRange(salary);
   }
   const car = body.querySelector('#carSlider');
   if (car) {
-    const cap = spendingLimit(plan, 'car');
-    car.max = Math.floor(cap); car.value = plan.car; syncRange(car);
-    body.querySelector('#carMax').textContent = money(cap);
+    body.querySelector('#carMax').textContent = compact(fitRange(car, plan.car, 2000, 1, hold, {cap: spendingLimit(plan, 'car')}));
     const range = carPriceRange(plan.car);
     body.querySelector('#carPrice').textContent = plan.car > 0 ? `${money(range.low)}–${money(range.high)}` : money(0);
   }
   for (const row of body.querySelectorAll('[data-expense]')) {
     const e = plan.expenses.find(x => x.id === row.dataset.expense);
     if (!e) continue;
-    const max = spendingLimit(plan, e.id), input = row.querySelector('input[data-num]'), range = row.querySelector('input[type=range]');
-    input.max = max; if (document.activeElement !== input) input.value = e.amount;
-    range.max = Math.floor(max); range.value = e.amount; syncRange(range);
-    row.querySelector('.spending-max').textContent = money(max);
+    const input = row.querySelector('input[data-num]');
+    if (document.activeElement !== input) input.value = e.amount;
+    row.querySelector('.spending-max').textContent = compact(fitRange(row.querySelector('input[type=range]'), e.amount, 5000, 1, hold, {cap: spendingLimit(plan, e.id)}));
   }
 }
 
 function expenseRow(e) {
-  return `<div class="expense-item" data-expense="${e.id}"><div class="row"><input class="expense-name" data-field="name" value="${esc(e.name)}" maxlength="80" aria-label="Bill name" enterkeyhint="done"><span class="money-input"><span>$</span><input data-field="amount" type="text" data-num min="0" step="0.01" inputmode="decimal" value="${e.amount}" aria-label="${esc(e.name)} monthly amount" enterkeyhint="done"></span><button type="button" class="remove" data-remove="${e.id}" aria-label="Remove ${esc(e.name)}">${icon('close')}</button></div><input type="range" min="0" step="1" data-field="amount" aria-label="${esc(e.name)} slider" value="${e.amount}"><div class="range-labels"><span>$0</span><span class="spending-max"></span></div></div>`;
+  return `<div class="expense-item" data-expense="${e.id}" data-reveal><div class="row"><input class="expense-name" data-field="name" value="${esc(e.name)}" maxlength="80" aria-label="Bill name" enterkeyhint="done"><span class="money-input"><span>$</span><input data-field="amount" type="text" data-num min="0" step="0.01" inputmode="decimal" value="${e.amount}" aria-label="${esc(e.name)} monthly amount" enterkeyhint="done"></span><button type="button" class="remove" data-remove="${e.id}" aria-label="Remove ${esc(e.name)}">${icon('close')}</button></div><input type="range" min="0" step="1" data-field="amount" aria-label="${esc(e.name)} slider" value="${e.amount}"><div class="range-labels"><span>$0</span><span class="spending-max"></span></div></div>`;
 }
 
 // Shared input handling for bill rows (bills panel and rent panel).
@@ -125,15 +134,15 @@ function wireExpenses(body, afterChange) {
     const plan = ctx.plan(), item = plan.expenses.find(x => x.id === row.dataset.expense);
     if (!item) return;
     if (field === 'name') { item.name = ev.target.value; ctx.commit(); return; }
-    const requested = numeric(ev.target), limit = spendingLimit(plan, item.id);
-    item.amount = Math.min(requested, limit);
-    if (item.amount !== requested && ev.type === 'change') toast('That would leave nothing to spend');
+    const requested = numeric(ev.target);
+    item.amount = Math.min(requested, spendingLimit(plan, item.id));
+    if (item.amount < requested && ev.type === 'change') toast("That's more than you make");
     if (ev.target.dataset.num !== undefined && ev.type === 'change') ev.target.value = item.amount;
     ctx.commit();
-    afterChange();
+    afterChange(ev.target.type === 'range' && ev.type === 'input' ? ev.target : null);
   };
   body.addEventListener('input', ev => { if (ev.target.dataset.num === undefined) edit(ev); else if (ev.target.value !== '') edit(ev); });
-  body.addEventListener('change', ev => { if (ev.target.dataset.num !== undefined) edit(ev); });
+  body.addEventListener('change', ev => { if (ev.target.dataset.num !== undefined || ev.target.type === 'range') edit(ev); });
 }
 
 function openIncome(origin) {
@@ -148,7 +157,7 @@ function openIncome(origin) {
         seg.querySelectorAll('button').forEach(b => { const on = b.dataset.mode === mode; b.classList.toggle('selected', on); b.setAttribute('aria-pressed', String(on)); });
         requestAnimationFrame(() => movePill(seg));
         fields.innerHTML = mode === 'salary' ? `
-          <div><label class="amount-field"><span>$</span><input id="salaryInput" type="text" data-num inputmode="numeric" min="0" max="1000000" step="1000" value="${plan.salary}" aria-label="Annual salary" enterkeyhint="done"></label><p class="fine" style="margin-top:8px">per year, before tax</p></div>
+          <div><label class="amount-field"><span>$</span><input id="salaryInput" type="text" data-num inputmode="numeric" value="${plan.salary}" aria-label="Annual salary" enterkeyhint="done"></label><p class="fine" style="margin-top:8px">per year, before tax</p></div>
           <div><input id="salarySlider" type="range" aria-label="Annual salary slider"><div class="range-labels"><span id="salaryMin"></span><span id="salaryMax"></span></div></div>
           ${stateSelect(plan.state)}
           ${plan.state === 'CO' ? `<div class="group switch-row"><span>Colorado FAMLI<small>0.44% paid-leave premium</small></span><label class="switch"><input type="checkbox" role="switch" id="famli" ${plan.famli ? 'checked' : ''}><i></i></label></div>` : ''}
@@ -170,17 +179,19 @@ function openIncome(origin) {
       });
       fields.addEventListener('input', e => {
         const plan = ctx.plan();
-        if (e.target.id === 'salaryInput') { const v = numeric(e.target); if (v >= minimumSalary(plan) && v <= 1e6) { plan.salary = v; ctx.commit(); setLimits(body); update(); } }
-        else if (e.target.id === 'salarySlider') { plan.salary = Math.max(minimumSalary(plan), numeric(e.target)); body.querySelector('#salaryInput').value = plan.salary; ctx.commit(); setLimits(body); update(); }
-        else if (e.target.id === 'takeHomeInput') { plan.takeHome = Math.min(1e6, numeric(e.target)); ctx.commit(); update(); }
+        // While typing, only amounts that cover your bills apply; the rest wait for the change event.
+        if (e.target.id === 'salaryInput') { const v = numeric(e.target); if (v >= minimumSalary(plan) && v <= 1e8) { plan.salary = v; ctx.commit(); setLimits(body); update(); } }
+        else if (e.target.id === 'salarySlider') { plan.salary = Math.max(minimumSalary(plan), numeric(e.target)); body.querySelector('#salaryInput').value = plan.salary; ctx.commit(); setLimits(body, e.target); update(); }
+        else if (e.target.id === 'takeHomeInput') { plan.takeHome = Math.min(1e8, numeric(e.target)); ctx.commit(); update(); }
       });
       fields.addEventListener('change', e => {
         const plan = ctx.plan();
         if (e.target.id === 'salaryInput') {
-          const v = numeric(e.target), min = minimumSalary(plan);
-          plan.salary = Math.max(min, Math.min(1e6, v));
-          if (plan.salary !== v) toast(v < min ? 'Minimum income to cover this plan' : 'Maximum $1,000,000');
+          const v = Math.min(1e8, numeric(e.target)), floor = minimumSalary(plan);
+          plan.salary = Math.max(floor, v);
+          if (plan.salary > v) toast('Your bills need at least ' + money(floor) + ' a year');
           e.target.value = plan.salary; ctx.commit(); setLimits(body); update();
+        } else if (e.target.id === 'salarySlider') { setLimits(body); update();
         } else if (e.target.id === 'famli') { plan.famli = e.target.checked; ctx.commit(); update(); }
         else if (e.target.matches('[data-state]')) { plan.state = e.target.value; ctx.commit(); draw(); }
         else if (e.target.id === 'takeHomeInput') {
@@ -228,9 +239,9 @@ function openRent(origin) {
     title: 'Rent',
     build(body, api) {
       const update = readout(api);
-      body.innerHTML = `<div data-expense="${rent.id}"><label class="amount-field"><span>$</span><input data-field="amount" type="text" data-num inputmode="decimal" min="0" step="1" value="${rent.amount}" aria-label="Monthly rent" enterkeyhint="done"></label><p class="fine" style="margin:8px 0 10px">per month</p><input type="range" min="0" step="1" data-field="amount" aria-label="Rent slider" value="${rent.amount}"><div class="range-labels"><span>$0</span><span class="spending-max"></span></div></div>
+      body.innerHTML = `<div data-expense="${rent.id}" data-reveal><label class="amount-field"><span>$</span><input data-field="amount" type="text" data-num inputmode="decimal" min="0" step="1" value="${rent.amount}" aria-label="Monthly rent" enterkeyhint="done"></label><p class="fine" style="margin:8px 0 10px">per month</p><input type="range" min="0" step="1" data-field="amount" aria-label="Rent slider" value="${rent.amount}"><div class="range-labels"><span>$0</span><span class="spending-max"></span></div></div>
         <p class="fine">Drag to see how a cheaper or pricier place changes what's left each month. Rent is also listed with your other bills.</p>`;
-      wireExpenses(body, () => { setLimits(body); update(); });
+      wireExpenses(body, hold => { setLimits(body, hold); update(); });
       setLimits(body);
       update();
     },
@@ -242,17 +253,17 @@ function openCar(origin) {
     title: 'Car',
     build(body, api) {
       const update = readout(api), plan = ctx.plan();
-      body.innerHTML = `<div><label class="amount-field"><span>$</span><input id="carInput" type="text" data-num inputmode="decimal" min="0" step="25" value="${plan.car}" aria-label="Monthly car budget" enterkeyhint="done"></label><p class="fine" style="margin:8px 0 10px">per month for a car payment</p><input id="carSlider" type="range" min="0" step="1" aria-label="Car budget slider"><div class="range-labels"><span>$0</span><span id="carMax"></span></div></div>
+      body.innerHTML = `<div data-reveal><label class="amount-field"><span>$</span><input id="carInput" type="text" data-num inputmode="decimal" min="0" step="25" value="${plan.car}" aria-label="Monthly car budget" enterkeyhint="done"></label><p class="fine" style="margin:8px 0 10px">per month for a car payment</p><input id="carSlider" type="range" min="0" step="1" aria-label="Car budget slider"><div class="range-labels"><span>$0</span><span id="carMax"></span></div></div>
         <div class="estimate"><span>Estimated car price</span><output id="carPrice"></output><p class="fine">${CAR_PRICE_ASSUMPTIONS}. Rates are assumptions, not lender quotes.</p></div>`;
       const set = (el, fromChange) => {
-        const p = ctx.plan(), requested = numeric(el), cap = spendingLimit(p, 'car');
-        p.car = Math.min(requested, cap);
-        if (fromChange && p.car !== requested) toast('That would leave nothing to spend');
+        const p = ctx.plan(), requested = numeric(el);
+        p.car = Math.min(requested, spendingLimit(p, 'car'));
+        if (fromChange && p.car < requested) toast("That's more than you make");
         if (el.id === 'carSlider' || fromChange) body.querySelector('#carInput').value = p.car;
-        ctx.commit(); setLimits(body); update();
+        ctx.commit(); setLimits(body, el.id === 'carSlider' && !fromChange ? el : null); update();
       };
       body.addEventListener('input', e => { if (e.target.id === 'carSlider' || (e.target.id === 'carInput' && e.target.value !== '')) set(e.target, false); });
-      body.addEventListener('change', e => { if (e.target.id === 'carInput') set(e.target, true); });
+      body.addEventListener('change', e => { if (e.target.id === 'carInput' || e.target.id === 'carSlider') set(e.target, true); });
       setLimits(body);
       update();
     },
@@ -270,7 +281,7 @@ function openBills(origin) {
         setLimits(body);
         if (focusLast) { const input = body.querySelector('#billList .expense-item:last-child .expense-name'); input?.focus(); input?.select(); }
       }
-      wireExpenses(body, () => { setLimits(body); update(); });
+      wireExpenses(body, hold => { setLimits(body, hold); update(); });
       body.addEventListener('click', e => {
         const plan = ctx.plan();
         const remove = e.target.closest('[data-remove]');
@@ -366,7 +377,7 @@ function openGoalSheet(card, id, {redraw, remove}) {
           <div class="gs-rate"><span class="gs-label">Each month</span><b class="gs-monthly"></b></div>
         </div>
         <div><div class="goal-progress gs-progress"><span></span></div><p class="fine gs-progress-label"></p></div>
-        <div class="gs-amounts">
+        <div class="gs-amounts" data-reveal>
           <label class="gs-field"><span>Target</span><span class="gs-money">$<input data-num data-field="target" type="text" inputmode="decimal" enterkeyhint="done" value="${g0.target}"></span></label>
           <label class="gs-field"><span>Saved so far</span><span class="gs-money">$<input data-num data-field="saved" type="text" inputmode="decimal" enterkeyhint="done" value="${g0.saved}"></span></label>
         </div>

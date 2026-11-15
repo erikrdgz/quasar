@@ -36,6 +36,9 @@ Slow/medium/fast allocate 10%/25%/40% of money remaining after bills and car. Mu
 ## Car price estimate
 The car editor and PDF reverse the amortized-loan payment formula to show an illustrative purchase-price range: 60 monthly payments, 6–10% APR, zero down, taxes and fees paid separately. Values round down to the nearest $100. Source for loan-term and price factors: https://www.consumerfinance.gov/ask-cfpb/how-much-can-i-afford-to-borrow-for-a-car-or-auto-loan-en-751/
 
+## Sliders
+The only limit is what you make: bills, rent and car can't add up to more than take-home, and salary can't drop below what they need (shown as the salary slider's start). Otherwise each slider's range is about twice its value, rounded to a clean number (at least $1k for bills and rent, $400 for car, $60k for salary), with steps that scale with the range: $1,850 rent slides over $0–$4k in $10s, $100,000 over $0–$200k in $1,000s. The range re-fits after typing or releasing the slider, never mid-drag, so dragging to the end and letting go extends it.
+
 ## Text fields
 While a text field is being edited and has text, a clear (×) button sits at its right edge; clearing keeps the keyboard up. Focusing a field puts the cursor at the end. Number fields are text fields with a decimal keyboard so the cursor can be placed, and accept only digits and one decimal point.
 

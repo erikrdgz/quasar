@@ -1,4 +1,4 @@
-import {DEFAULT_STATE,isState,stateTax} from './states.js?v=37';
+import {DEFAULT_STATE,isState,stateTax} from './states.js?v=39';
 export const uid=()=>globalThis.crypto.randomUUID();
 // New plans start empty; onboarding or the user fills them in.
 export function blank(){return {id:uid(),name:'My plan',salary:0,incomeMode:'salary',takeHome:0,state:DEFAULT_STATE,other:0,famli:true,car:0,goals:[],expenses:[]};}
@@ -23,6 +23,11 @@ export const GOAL_COLORS=[
 ];
 export const goalColor=goal=>GOAL_COLORS.find(([id])=>id===goal.color)?.[2]||null;
 export function goalIcon(goal){if(GOAL_ICONS.some(([id])=>id===goal.icon))return goal.icon;const name=String(goal.name||'').toLowerCase();return ICON_WORDS.find(([,re])=>re.test(name))?.[0]||'piggy-bank';}
+// Slider range for an amount: about twice the value, so the thumb sits near the
+// middle whether it's $375 or $100,000, never pinned at the end. base/5 is the
+// smallest range (e.g. $1k for bills). The max is a round number and the step
+// scales with it (e.g. $1k in $10s, $200k in $1,000s).
+export function sliderRange(value,base){const target=Math.max(base/5,(Number(value)||0)*2),unit=10**Math.floor(Math.log10(target)),max=Math.ceil(target/unit-1e-9)*unit;return {max,step:Math.max(1,10**(Math.floor(Math.log10(max))-2))};}
 // True for a plan nobody has filled in yet.
 export const isUntouched=p=>!p.salary&&!p.takeHome&&!p.car&&!p.other&&!p.expenses.length&&!p.goals.length;
 // FAMLI is Colorado's paid-leave premium, so it only applies when the state is Colorado.
@@ -48,8 +53,8 @@ export function calculate(p){const tax=usesTakeHome(p)?{federal:0,state:0,ss:0,m
  const goals=p.goals.map(g=>{const remaining=Math.max(0,g.target-g.saved),monthly=!remaining?0:g.pace==='custom'?fixed.get(g)||0:weight?Math.min(remaining,pool*weights[g.pace]/weight):0;return {...g,remaining,monthly,months:remaining===0?0:monthly>0?Math.ceil(remaining/monthly):null};});
  const savings=goals.reduce((s,g)=>s+g.monthly,0);return {tax,net,expenses,available,savings,goals,left:available-savings};}
 export function validatePlan(p,keepIds=false){
- const number=(n,max=1e7)=>typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<=max;
- if(!p||typeof p.name!=='string'||p.name.length>80||!number(p.salary,1e6)||!number(p.other)||!number(p.car)||typeof p.famli!=='boolean'||!Array.isArray(p.expenses)||!Array.isArray(p.goals)||p.expenses.length>50||p.goals.length>30)throw Error('Invalid plan format.');
+ const number=(n,max=1e8)=>typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<=max;
+ if(!p||typeof p.name!=='string'||p.name.length>80||!number(p.salary,1e8)||!number(p.other)||!number(p.car)||typeof p.famli!=='boolean'||!Array.isArray(p.expenses)||!Array.isArray(p.goals)||p.expenses.length>50||p.goals.length>30)throw Error('Invalid plan format.');
  const incomeMode=p.incomeMode??'salary',takeHome=p.takeHome??0;
  if(!['salary','takehome'].includes(incomeMode)||!number(takeHome,1e6))throw Error('Invalid take-home pay.');
  for(const e of p.expenses)if(typeof e.name!=='string'||e.name.length>80||!number(e.amount))throw Error('Invalid expense.');

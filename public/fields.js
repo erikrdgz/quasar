@@ -3,7 +3,7 @@
 //    right edge; clearing keeps focus so the keyboard stays up,
 //  • focusing a field puts the cursor at the end, not the start,
 //  • number fields ([data-num]) accept only digits and one decimal point.
-import {icon} from './icons.js?v=37';
+import {icon} from './icons.js?v=39';
 
 const TEXT_FIELDS = 'input[type=text], input[type=search], input[type=email], input[type=tel], input[type=url], input:not([type])';
 const isTextField = el => el instanceof HTMLInputElement && el.matches(TEXT_FIELDS) && !el.matches('[data-no-clear]');
@@ -82,3 +82,42 @@ addEventListener('resize', place);
 document.addEventListener('scroll', () => { if (current) place(); }, true);
 // Panels and pages animate fields into place; follow them for a moment after focus.
 document.addEventListener('focusin', () => { let frames = 0; const follow = () => { if (!current || ++frames > 60) return; place(); requestAnimationFrame(follow); }; requestAnimationFrame(follow); });
+
+// Keyboard awareness. When a field is being edited, its row (marked
+// [data-reveal], e.g. a bill's name, amount and slider) is scrolled into the
+// space above the on-screen keyboard. The visual viewport shrinks while the
+// keyboard is up; --kb exposes that height so scroll areas can pad for it.
+const vv = globalThis.visualViewport;
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const keyboardHeight = () => (vv ? Math.max(0, innerHeight - vv.height - vv.offsetTop) : 0);
+const editing = () => { const el = document.activeElement; return el instanceof HTMLInputElement && el.matches(TEXT_FIELDS) ? el : null; };
+
+export function reveal(el) {
+  if (!el?.isConnected) return;
+  const target = el.closest('[data-reveal]') || el;
+  const scroller = target.closest('.panel-body, .setup-page') || document.scrollingElement;
+  const page = scroller === document.scrollingElement;
+  const area = page ? {top: document.querySelector('.top')?.getBoundingClientRect().bottom ?? 0, bottom: innerHeight} : scroller.getBoundingClientRect();
+  const viewTop = vv ? vv.offsetTop : 0, viewBottom = vv ? vv.offsetTop + vv.height : innerHeight;
+  const top = Math.max(viewTop, area.top) + 12, bottom = Math.min(viewBottom, area.bottom) - 16;
+  const r = target.getBoundingClientRect();
+  let dy = 0;
+  if (r.bottom > bottom) dy = r.bottom - bottom;
+  if (r.top - dy < top) dy = r.top - top;
+  if (Math.abs(dy) > 1) scroller.scrollBy({top: dy, behavior: reduceMotion.matches ? 'auto' : 'smooth'});
+}
+
+function onViewport() {
+  document.documentElement.style.setProperty('--kb', `${Math.round(keyboardHeight())}px`);
+  const el = editing();
+  if (el) reveal(el);
+}
+vv?.addEventListener('resize', onViewport);
+vv?.addEventListener('scroll', onViewport);
+// Reveal on focus, then again once the keyboard has finished sliding up.
+document.addEventListener('focusin', e => {
+  if (!editing() || e.target !== editing()) return;
+  const el = e.target;
+  setTimeout(() => { if (document.activeElement === el) reveal(el); }, 60);
+  setTimeout(() => { if (document.activeElement === el) reveal(el); }, 420);
+});

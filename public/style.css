@@ -594,3 +594,8 @@ input.has-clear{padding-right:38px!important}
 .select-wrap .fa-icon{position:absolute;right:12px;width:11px;height:11px;color:var(--muted);pointer-events:none}
 .setup-page .state-row{margin-top:12px}
 .setup-income-extra{width:100%}
+
+/* Scroll areas pad for the on-screen keyboard (--kb) so any row can sit above it. */
+.panel-body{padding-bottom:calc(28px + env(safe-area-inset-bottom) + var(--kb,0px))}
+.panel[data-tone=goal] .goal-sheet{padding-bottom:calc(20px + var(--kb,0px))}
+.setup-page{padding-bottom:calc(24px + env(safe-area-inset-bottom) + var(--kb,0px))}
