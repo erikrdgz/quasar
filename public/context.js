@@ -42,7 +42,8 @@ export function toast(text, undo) {
   void el.offsetWidth;
   el.classList.add('is-visible');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(hideToast, undo ? 7000 : 3200);
+  // A brief banner: long enough to read, or to tap Undo, then gone.
+  toastTimer = setTimeout(hideToast, undo ? 4500 : 2200);
 }
 export function hideToast() { $('toast').classList.remove('is-visible'); }
 

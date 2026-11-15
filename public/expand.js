@@ -39,6 +39,22 @@ export const panelOpen = () => stack.length > 0;
 // Closes everything (e.g. on a tab switch): stacked panels instantly, the bottom one animated.
 export function closePanel() { while (stack.length > 1) stack.at(-1).close(true); return stack[0]?.close() || Promise.resolve(); }
 
+// Safety net for any error that strikes while a panel is opening: with no panel
+// registered, nothing should still be dimmed, inert or covered by a layer.
+// Returns true when it had to put the app back.
+export function recoverUi() {
+  if (stack.length) return false;
+  const layers = document.querySelectorAll('.panel-layer'), root = document.documentElement;
+  if (!layers.length && !root.classList.contains('panel-open')) return false;
+  const app = document.getElementById('app'), tabbar = document.querySelector('.tabbar');
+  layers.forEach(layer => layer.remove());
+  root.classList.remove('panel-open');
+  if (app) { app.getAnimations().forEach(a => a.cancel()); app.inert = false; app.style.transformOrigin = ''; }
+  if (tabbar) tabbar.inert = false;
+  document.querySelectorAll('.is-origin').forEach(el => el.classList.remove('is-origin'));
+  return true;
+}
+
 function cloneTile(tile, rect) {
   const ghost = tile.cloneNode(true);
   ghost.classList.remove('is-origin');
@@ -88,7 +104,15 @@ export function openPanel(origin, opts) {
     setTitle(text) { layer.querySelector('h2').textContent = text; },
     close,
   };
-  opts.build(body, api);
+  // A panel that fails to build must never leave the app locked behind an empty,
+  // unclosable layer: undo everything above, then let the error surface.
+  try { opts.build(body, api); }
+  catch (err) {
+    layer.remove();
+    if (parent) parent.layer.inert = false;
+    else { document.documentElement.classList.remove('panel-open'); app.inert = false; if (tabbar) tabbar.inert = false; app.style.transformOrigin = ''; }
+    throw err;
+  }
 
   const box = rectOf(panel), to = rectOf(opts.shape?.(api) || panel), toRadius = radiusOf(panel);
   origin.classList.add('is-origin');

@@ -6,7 +6,7 @@ import {load, flush, backupBlob, readBackup, eraseAll} from './store.js?v=44';
 import {samples, reduceMotion, holdToConfirm} from './motion.js?v=44';
 import {attachSwipe} from './swipe.js?v=44';
 import {blank, calculate, uid} from './finance.js?v=44';
-import {closePanel, panelOpen} from './expand.js?v=44';
+import {closePanel, panelOpen, recoverUi} from './expand.js?v=44';
 import {renderToday, setupToday} from './today.js?v=44';
 import {renderLedger, setupLedger} from './ledger-view.js?v=44';
 import {renderPlans, setupPlans} from './plans-view.js?v=44';
@@ -16,6 +16,12 @@ const VIEWS = {today: renderToday, ledger: renderLedger, plans: renderPlans};
 const curve = samples(300, 28);
 
 ctx.refresh = () => VIEWS[ctx.tab]();
+
+// If anything throws while a sheet is opening, don't leave the app frozen
+// behind it: put the screen back and say so.
+const unlock = () => setTimeout(() => { if (recoverUi()) toast('Something went wrong. Try that again.'); }, 0);
+addEventListener('error', unlock);
+addEventListener('unhandledrejection', unlock);
 
 function movePillTo(button, animate = true) {
   const pill = document.querySelector('.tab-pill'), x = button.offsetLeft, w = button.offsetWidth;

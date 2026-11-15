@@ -23,6 +23,16 @@ function tx(mode, run) {
   });
 }
 
+// IndexedDB can fail to answer at all (seen on iOS right after launch or a system
+// update). Never let that leave the app waiting forever: give up and fall back.
+const STORAGE_TIMEOUT = 4000;
+function withTimeout(promise, ms = STORAGE_TIMEOUT) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(Error('Storage did not respond.')), ms);
+    promise.then(value => { clearTimeout(timer); resolve(value); }, error => { clearTimeout(timer); reject(error); });
+  });
+}
+
 function readLegacy() {
   try { return fromLegacy(JSON.parse(localStorage.getItem(LEGACY_KEY))); } catch { return null; }
 }
@@ -30,11 +40,12 @@ function readLegacy() {
 // Returns {state, warning}. A warning means saving may not survive.
 export async function load() {
   try {
-    db = await openDb();
-    const saved = await tx('readonly', s => s.get(KEY));
+    const opened = await withTimeout(openDb());
+    db = opened;
+    const saved = await withTimeout(tx('readonly', s => s.get(KEY)));
     if (saved) return {state: validateState(saved)};
     const state = readLegacy() || defaultState();
-    await tx('readwrite', s => s.put(state, KEY));
+    await withTimeout(tx('readwrite', s => s.put(state, KEY)));
     return {state};
   } catch {
     db = null;
@@ -60,10 +71,14 @@ export async function flush() {
   const snapshot = structuredClone(pending);
   pending = null;
   try {
-    if (db) await tx('readwrite', s => s.put(snapshot, KEY));
+    if (db) await withTimeout(tx('readwrite', s => s.put(snapshot, KEY)));
     else localStorage.setItem(FALLBACK, JSON.stringify(snapshot));
     return true;
-  } catch { return false; }
+  } catch {
+    // Keep the data queued so the next save retries it instead of losing it.
+    pending = pending || snapshot;
+    return false;
+  }
 }
 addEventListener('pagehide', flush);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
