@@ -1,13 +1,13 @@
 // First-run setup: one full-screen question per step with Back, Skip and a
 // percentage bar. Answers are written straight into the first plan, so going
 // back shows what was entered, and any step can be skipped.
-import {ctx, esc, money, cash} from './context.js?v=45';
-import {icon} from './icons.js?v=45';
-import {reduceMotion, slideToConfirm, movePill} from './motion.js?v=45';
-import {blank, calculate, isUntouched, uid, usesTakeHome} from './finance.js?v=45';
+import {ctx, esc, money, cash} from './context.js?v=46';
+import {icon} from './icons.js?v=46';
+import {reduceMotion, slideToConfirm, movePill} from './motion.js?v=46';
+import {blank, calculate, isUntouched, uid, usesTakeHome} from './finance.js?v=46';
 
-import {CATEGORIES, STEPS, percentAt} from './setup-steps.js?v=45';
-import {stateSelect} from './plans-view.js?v=45';
+import {CATEGORIES, STEPS, percentAt} from './setup-steps.js?v=46';
+import {stateSelect} from './plans-view.js?v=46';
 
 // A plain carousel: both pages slide one screen width on the same ease.
 const PUSH_MS = 380, PUSH_EASE = 'cubic-bezier(.32,.72,0,1)';
@@ -136,7 +136,7 @@ export function startSetup(root, {back, finish}) {
   function planHTML() {
     const p = plan(), takeHome = usesTakeHome(p);
     return `<h1 class="sr-only">Your plan</h1>
-      <input class="setup-plan-name setup-title-input" type="text" maxlength="80" autocapitalize="words" autocomplete="off" enterkeyhint="next" placeholder="Name this plan" aria-label="Plan name" value="${p.name === 'My plan' ? '' : esc(p.name)}">
+      <input class="setup-plan-name setup-title-input" type="text" maxlength="80" autocapitalize="words" autocomplete="off" enterkeyhint="next" placeholder="Plan title" aria-label="Plan title" value="${p.name === 'My plan' ? '' : esc(p.name)}">
       <div class="segmented setup-income-mode"><span class="pace-lens" aria-hidden="true"></span><button type="button" data-mode="salary" class="${takeHome ? '' : 'selected'}" aria-pressed="${!takeHome}">Salary / year</button><button type="button" data-mode="takehome" class="${takeHome ? 'selected' : ''}" aria-pressed="${takeHome}">Take-home / month</button></div>
       ${amountField(takeHome ? p.takeHome : p.salary, takeHome ? 'Monthly take-home pay' : 'Annual salary', takeHome ? '/ month' : '/ year', takeHome ? 'decimal' : 'numeric')}
       <div class="setup-income-extra">${incomeExtra(takeHome)}</div>

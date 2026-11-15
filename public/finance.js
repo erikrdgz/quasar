@@ -1,4 +1,4 @@
-import {DEFAULT_STATE,isState,stateTax} from './states.js?v=45';
+import {DEFAULT_STATE,isState,stateTax} from './states.js?v=46';
 export const uid=()=>globalThis.crypto.randomUUID();
 // New plans start empty; onboarding or the user fills them in.
 export function blank(){return {id:uid(),name:'My plan',salary:0,incomeMode:'salary',takeHome:0,state:DEFAULT_STATE,other:0,famli:true,car:0,goals:[],expenses:[]};}

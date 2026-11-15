@@ -8,8 +8,8 @@
 //   • the app behind, which recedes and dims.
 // Geometry is always measured with the app unscaled, and a close that interrupts
 // an open reverses from wherever the card is at that moment.
-import {icon} from './icons.js?v=45';
-import {reduceMotion} from './motion.js?v=45';
+import {icon} from './icons.js?v=46';
+import {reduceMotion} from './motion.js?v=46';
 
 // iOS-style spring described by response (seconds) and damping ratio.
 function spring(response, dampingRatio) {
@@ -114,7 +114,8 @@ export function openPanel(origin, opts) {
     throw err;
   }
 
-  const box = rectOf(panel), to = rectOf(opts.shape?.(api) || panel), toRadius = radiusOf(panel);
+  // Re-measured when closing: the on-screen keyboard can resize the panel while it's open.
+  let box = rectOf(panel), to = rectOf(opts.shape?.(api) || panel), toRadius = radiusOf(panel);
   origin.classList.add('is-origin');
   let ghost = cloneTile(origin, from);
   layer.append(ghost);
@@ -152,13 +153,15 @@ export function openPanel(origin, opts) {
 
   // Once open, drop the animation's leftover styles so the panel is a plain,
   // untransformed element. iOS misplaces the text cursor inside transformed,
-  // scrolling containers. Only a custom shape keeps its (static) clip.
+  // scrolling containers. No clip is kept either: a fixed pixel clip can't follow
+  // a shape (like the goal sheet) that the keyboard resizes, and would cut it off.
+  // .is-settled lets a shaped panel draw only its shape instead.
   function settle() {
     if (closed || !running.length) return;
-    const final = frames(from, fromRadius, from, 1, 'open');
     running.slice(0, 4).forEach(a => a.cancel());
     running = running.slice(4);
-    panel.style.clipPath = opts.shape ? final.panel.clipPath : '';
+    panel.style.clipPath = '';
+    panel.classList.add('is-settled');
     ghost.style.opacity = '0';
   }
 
@@ -172,6 +175,7 @@ export function openPanel(origin, opts) {
   if (!parent) app.style.transformOrigin = `50% ${scrollY + innerHeight / 2}px`;
   if (reduceMotion()) {
     ghost.remove();
+    panel.classList.add('is-settled');
     layer.animate([{opacity: 0}, {opacity: 1}], {duration: 160});
   } else {
     animate(OPEN, 0, 1, from, fromRadius, from, 'open').then(settle, () => {});
@@ -221,6 +225,8 @@ export function openPanel(origin, opts) {
     const p0 = progressNow();
     // Drop the running animations first so the tile is measured unscaled.
     running.forEach(a => a.cancel());
+    panel.classList.remove('is-settled');
+    box = rectOf(panel); to = rectOf(opts.shape?.(api) || panel); toRadius = radiusOf(panel);
     const tile = findOrigin();
     if (reduceMotion() || !tile) {
       return (closed = withDeadline(layer.animate([{opacity: 1}, {opacity: 0}], {duration: 160}).finished));

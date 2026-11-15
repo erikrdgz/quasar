@@ -63,6 +63,7 @@ export function reveal(el) {
 function onViewport() {
   const root = document.documentElement.style;
   root.setProperty('--kb', `${Math.round(keyboardHeight())}px`);
+  document.documentElement.classList.toggle('keyboard-open', keyboardHeight() > 80);
   root.setProperty('--vvh', `${Math.round(vv ? vv.height : innerHeight)}px`);
   root.setProperty('--vvt', `${Math.round(vv ? vv.offsetTop : 0)}px`);
   const el = editing();

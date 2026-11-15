@@ -496,12 +496,12 @@ dialog::backdrop{background:#000000b3;-webkit-backdrop-filter:blur(8px);backdrop
 .panel[data-tone=goal] .panel-head{padding-bottom:0}
 .goal-sheet{padding-top:0}
 .panel-body.goal-sheet>*+*{margin-top:14px}
-.gs-name{display:flex;align-items:center;gap:12px}
+.gs-title{display:flex;align-items:center;gap:12px}
 .gs-chip{width:48px;height:48px;border-radius:15px}
 .gs-chip .fa-icon{width:21px;height:21px}
-.gs-name-input{flex:1;min-width:0;padding:6px 0;border:0;background:none;font-size:24px!important;font-weight:700;letter-spacing:-.6px;color:var(--text)}
-.gs-name-input::placeholder{color:#ffffff40}
-.gs-name-input:focus-visible{outline:none}
+.gs-title-input{flex:1;min-width:0;padding:6px 0;border:0;background:none;font-size:24px!important;font-weight:700;letter-spacing:-.6px;color:var(--text)}
+.gs-title-input::placeholder{color:#ffffff40}
+.gs-title-input:focus-visible{outline:none}
 .gs-hero{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding:14px 16px;border-radius:20px;background:#ffffff08;border:1px solid var(--line)}
 .gs-hero>div{display:flex;flex-direction:column;min-width:0}
 .gs-label{font-size:12px;color:var(--muted)}
@@ -539,7 +539,7 @@ dialog::backdrop{background:#000000b3;-webkit-backdrop-filter:blur(8px);backdrop
 .panel[data-tone=goal] .panel-head{position:absolute;top:0;right:0;z-index:2;padding:16px 16px 0 0}
 .panel[data-tone=goal] .panel-head h2,.panel[data-tone=goal] .panel-aside{display:none}
 .panel[data-tone=goal] .goal-sheet{padding:18px 20px 20px}
-.goal-sheet .gs-name{padding-right:48px}
+.goal-sheet .gs-title{padding-right:48px}
 
 /* Goal sheet, airier: pickers fold behind the icon chip */
 .panel-body.goal-sheet>*+*{margin-top:20px}
@@ -599,7 +599,15 @@ dialog::backdrop{background:#000000b3;-webkit-backdrop-filter:blur(8px);backdrop
 
 /* Scroll areas pad for the on-screen keyboard (--kb) so any row can sit above it. */
 .panel-body{padding-bottom:calc(28px + env(safe-area-inset-bottom) + var(--kb,0px))}
-.panel[data-tone=goal] .goal-sheet{padding-bottom:calc(20px + var(--kb,0px))}
+/* The goal sheet lives in the visible area above the keyboard (as setup does)
+   rather than padding for the keyboard: the whole card, name field included,
+   stays on screen while typing. */
+.panel[data-tone=goal]{top:calc(var(--vvt,0px) + env(safe-area-inset-top) + 10px);bottom:auto;height:calc(min(var(--vvh,100dvh),100dvh) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px)}
+.keyboard-open .panel[data-tone=goal]{height:calc(min(var(--vvh,100dvh),100dvh) - env(safe-area-inset-top) - 20px)}
+.panel[data-tone=goal] .goal-sheet{padding-bottom:20px}
+/* Once open, only the card is drawn and hit; taps around it reach the backdrop. */
+.panel[data-tone=goal].is-settled{background:none;pointer-events:none}
+.panel[data-tone=goal].is-settled .panel-inner{pointer-events:auto;background-color:#0c0c0f}
 
 /* Setup's content fills exactly the visible area above the keyboard, so the
    step's title, field and Continue stay in view with nothing to scroll. */
