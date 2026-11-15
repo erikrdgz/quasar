@@ -386,7 +386,10 @@ dialog::backdrop{background:#000000b3;-webkit-backdrop-filter:blur(8px);backdrop
 .intro-orbit{transform-origin:48.4% 47.9%;backface-visibility:hidden}
 .intro-tail-draw{stroke-dasharray:1;stroke-dashoffset:1}
 .intro-logo-shine{object-fit:contain;filter:grayscale(.75) brightness(2.5);-webkit-mask-image:linear-gradient(110deg,transparent 44%,#0009 48%,#000 50%,#0009 52%,transparent 56%);mask-image:linear-gradient(110deg,transparent 44%,#0009 48%,#000 50%,#0009 52%,transparent 56%);-webkit-mask-size:300% 100%;mask-size:300% 100%;-webkit-mask-position:130% 0;mask-position:130% 0;mask-repeat:no-repeat;-webkit-mask-repeat:no-repeat}
-.intro-logo-flare{position:absolute;left:50%;top:51%;width:23%;aspect-ratio:1;background:radial-gradient(ellipse,#fff 0%,#b8edff99 12%,#368dff40 35%,transparent 70%);mix-blend-mode:screen;filter:blur(1px);opacity:0}
+.intro-logo-flare{position:absolute;left:50%;top:51%;width:23%;aspect-ratio:1;background:radial-gradient(circle,#fff 0%,#effbff 2%,#caf1ffb3 5%,#66baff40 15%,transparent 44%);mix-blend-mode:screen;opacity:0;pointer-events:none}
+.intro-logo-flare::before,.intro-logo-flare::after{content:"";position:absolute;inset:0;pointer-events:none}
+.intro-logo-flare::before{background:linear-gradient(90deg,transparent 0%,#b8eaff66 36%,#fff 49%,#fff 51%,#b8eaff66 64%,transparent 100%) center/100% 1px no-repeat,linear-gradient(0deg,transparent 0%,#b8eaff66 36%,#fff 49%,#fff 51%,#b8eaff66 64%,transparent 100%) center/1px 100% no-repeat;filter:drop-shadow(0 0 2px #a8dcff)}
+.intro-logo-flare::after{inset:23%;transform:rotate(45deg);background:linear-gradient(90deg,transparent,#e5f7ffb3,transparent) center/100% 1px no-repeat,linear-gradient(0deg,transparent,#e5f7ff80,transparent) center/1px 100% no-repeat;filter:blur(.3px)}
 /* Hold the initial image footprint without a flash of the completed mark. */
 .intro-step>.intro-logo{width:min(46vw,176px);height:auto;aspect-ratio:1;opacity:0}
 @media(prefers-reduced-motion:reduce){.intro-logo-shine,.intro-logo-flare{display:none}}

@@ -46,11 +46,11 @@ async function revealLogo(mark) {
     finish.animate([{opacity: 0}, {opacity: 1}], {duration: 180, fill: 'both'});
     return;
   }
-  // Two continuous revolutions, a short deceleration, then the separate sparkle.
+  // One continuous revolution, a short deceleration, then the separate sparkle.
   orbit.animate([
-    {opacity: 0, transform: 'perspective(600px) rotateY(24deg) rotateZ(-720deg) scale(.92)', filter: 'blur(1.5px)', offset: 0},
-    {opacity: 1, transform: 'perspective(600px) rotateY(18deg) rotateZ(-630deg) scale(.96)', filter: 'blur(.4px)', offset: .12},
-    {opacity: 1, transform: 'perspective(600px) rotateY(-12deg) rotateZ(-180deg) scale(1)', filter: 'blur(.3px)', offset: .68, easing: 'cubic-bezier(.12,.45,.18,1)'},
+    {opacity: 0, transform: 'perspective(600px) rotateY(24deg) rotateZ(-360deg) scale(.92)', filter: 'blur(1.5px)', offset: 0},
+    {opacity: 1, transform: 'perspective(600px) rotateY(18deg) rotateZ(-315deg) scale(.96)', filter: 'blur(.4px)', offset: .12},
+    {opacity: 1, transform: 'perspective(600px) rotateY(-12deg) rotateZ(-90deg) scale(1)', filter: 'blur(.3px)', offset: .68, easing: 'cubic-bezier(.12,.45,.18,1)'},
     {opacity: 1, transform: 'perspective(600px) rotateY(0deg) rotateZ(0deg) scale(1)', filter: 'blur(0px)', offset: .94},
     {opacity: 0, transform: 'perspective(600px) rotateY(0deg) rotateZ(0deg) scale(1)', filter: 'blur(0px)', offset: 1}
   ], {duration: 2460, easing: 'linear', fill: 'both'});
@@ -63,11 +63,14 @@ async function revealLogo(mark) {
     {opacity: .85, maskPosition: '0% 0', webkitMaskPosition: '0% 0', offset: .82},
     {opacity: 0, maskPosition: '-30% 0', webkitMaskPosition: '-30% 0', offset: 1}
   ], {duration: 420, delay: 2350, easing: 'cubic-bezier(.25,.1,.25,1)', fill: 'both'});
+  // A small specular glint follows the glass rim before blooming at the stroke.
   mark.querySelector('.intro-logo-flare').animate([
-    {opacity: 0, transform: 'scale(.65)', offset: 0},
-    {opacity: .65, transform: 'scale(1.12)', offset: .4},
-    {opacity: 0, transform: 'scale(1.3)', offset: 1}
-  ], {duration: 400, delay: 2460, easing: 'ease-out', fill: 'both'});
+    {opacity: 0, transform: 'translate(28%,-154%) rotate(-28deg) scale(.45)', offset: 0},
+    {opacity: .65, transform: 'translate(63%,-85%) rotate(-12deg) scale(.65)', offset: .25},
+    {opacity: 1, transform: 'translate(0%,0%) rotate(12deg) scale(1.15)', offset: .57},
+    {opacity: .45, transform: 'translate(0%,0%) rotate(18deg) scale(.8)', offset: .76},
+    {opacity: 0, transform: 'translate(0%,0%) rotate(22deg) scale(.35)', offset: 1}
+  ], {duration: 700, delay: 2310, easing: 'linear', fill: 'both'});
 }
 
 function springIn(el, {y = 24, scale = 0.94, delay = 0} = {}) {

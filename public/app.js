@@ -9,7 +9,7 @@ import {closePanel, panelOpen} from './expand.js?v=22';
 import {renderToday, setupToday} from './today.js?v=22';
 import {renderLedger, setupLedger} from './ledger-view.js?v=22';
 import {renderPlans, setupPlans} from './plans-view.js?v=22';
-import {runIntro} from './intro.js?v=23';
+import {runIntro} from './intro.js?v=24';
 
 const VIEWS = {today: renderToday, ledger: renderLedger, plans: renderPlans};
 const curve = samples(300, 28);
