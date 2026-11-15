@@ -522,14 +522,6 @@ dialog::backdrop{background:#000000b3;-webkit-backdrop-filter:blur(8px);backdrop
 .gs-actions .button{min-height:50px}
 .gs-actions .button.danger{flex:0 0 64px}
 
-/* Clear button for the field being edited */
-.field-clear{position:fixed;z-index:90;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#ffffff2e;color:#fff;box-shadow:0 2px 6px #0006}
-.field-clear[hidden]{display:none}
-.field-clear .fa-icon{width:11px;height:11px}
-.field-clear:active{background:#ffffff4d}
-input.has-clear{padding-right:38px!important}
-.gs-money input.has-clear,.money-input input.has-clear{padding-right:32px!important}
-
 /* The goal sheet sizes to its content and sits at the bottom, with the goals
    list showing above it. The close button joins the name row. */
 .panel[data-tone=goal]{background:#0c0c0f;box-shadow:none}
@@ -598,4 +590,14 @@ input.has-clear{padding-right:38px!important}
 /* Scroll areas pad for the on-screen keyboard (--kb) so any row can sit above it. */
 .panel-body{padding-bottom:calc(28px + env(safe-area-inset-bottom) + var(--kb,0px))}
 .panel[data-tone=goal] .goal-sheet{padding-bottom:calc(20px + var(--kb,0px))}
-.setup-page{padding-bottom:calc(24px + env(safe-area-inset-bottom) + var(--kb,0px))}
+
+/* The intro and setup always fill exactly the visible area above the keyboard,
+   so the step's title, field and Continue stay in view with nothing to scroll. */
+.intro{inset:auto 0;top:var(--vvt,0px);height:var(--vvh,100dvh)}
+
+/* The plan step's name is its heading, which keeps the step short enough to
+   sit above the keyboard with Continue in view. */
+.setup-title-input{width:100%;padding:4px 0 8px;border:0;border-bottom:1px solid var(--line-strong);border-radius:0;background:none;text-align:center;font-size:28px!important;font-weight:700;letter-spacing:-.9px;color:var(--text)}
+.setup-title-input::placeholder{color:#ffffff40}
+.setup-title-input:focus,.setup-title-input:focus-visible{outline:none;border-bottom-color:#ffffff80}
+.setup-page .setup-title-input+.segmented{margin-top:18px}

@@ -1,7 +1,7 @@
 // Device storage. IndexedDB holds the app state; localStorage is a fallback for
 // browsers that block IndexedDB. The original localStorage plans are read once
 // on first launch and left in place as a backup.
-import {LEGACY_KEY, defaultState, fromLegacy, validateState} from './state.js?v=39';
+import {LEGACY_KEY, defaultState, fromLegacy, validateState} from './state.js?v=40';
 
 const DB = 'quasar', STORE = 'state', KEY = 'app', FALLBACK = 'quasar-state-v2';
 let db = null;

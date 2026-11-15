@@ -1,15 +1,15 @@
 // Plans: compare salary scenarios. Each tile expands into its editor; a live
 // "left / month" readout in the panel header shows the effect while you drag.
-import {ctx, $, esc, money, cash, compact, toast} from './context.js?v=39';
-import {icon} from './icons.js?v=39';
-import {openPanel} from './expand.js?v=39';
-import {syncRange} from './sliders.js?v=39';
-import {attachSwipe} from './swipe.js?v=39';
-import {movePill, reduceMotion, slideToConfirm, springIn, springText} from './motion.js?v=39';
-import {calculate, uid, minimumSalary, spendingLimit, sliderRange, carPriceRange, CAR_PRICE_ASSUMPTIONS, usesTakeHome, taxes, GOAL_ICONS, goalIcon, GOAL_COLORS, goalColor} from './finance.js?v=39';
-import {createBudget, lockIn, unlock} from './ledger.js?v=39';
-import {persist} from './store.js?v=39';
-import {STATES, stateName, hasIncomeTax} from './states.js?v=39';
+import {ctx, $, esc, money, cash, compact, toast} from './context.js?v=40';
+import {icon} from './icons.js?v=40';
+import {openPanel} from './expand.js?v=40';
+import {syncRange} from './sliders.js?v=40';
+import {attachSwipe} from './swipe.js?v=40';
+import {movePill, reduceMotion, slideToConfirm, springIn, springText} from './motion.js?v=40';
+import {calculate, uid, minimumSalary, spendingLimit, sliderRange, carPriceRange, CAR_PRICE_ASSUMPTIONS, usesTakeHome, taxes, GOAL_ICONS, goalIcon, GOAL_COLORS, goalColor} from './finance.js?v=40';
+import {createBudget, lockIn, unlock} from './ledger.js?v=40';
+import {persist} from './store.js?v=40';
+import {STATES, stateName, hasIncomeTax} from './states.js?v=40';
 
 // Inline custom property for a goal's optional color.
 const tint = g => (goalColor(g) ? ` style="--goal:${goalColor(g)}"` : '');

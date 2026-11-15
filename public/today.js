@@ -1,11 +1,11 @@
 // Today: the number you open the app for, and the fastest way to change it.
-import {ctx, $, esc, money, cash, modal, toast} from './context.js?v=39';
-import {icon} from './icons.js?v=39';
-import {openPanel} from './expand.js?v=39';
-import {springText} from './motion.js?v=39';
-import {byCategory, dailySpend, daysIn, daysLeft, monthKey, monthName, noSpendStreak, openMonthOf, pace, perDay, totals} from './ledger.js?v=39';
-import {openPurchase} from './purchase.js?v=39';
-import {entryRow, openCloseMonth} from './month-flows.js?v=39';
+import {ctx, $, esc, money, cash, modal, toast} from './context.js?v=40';
+import {icon} from './icons.js?v=40';
+import {openPanel} from './expand.js?v=40';
+import {springText} from './motion.js?v=40';
+import {byCategory, dailySpend, daysIn, daysLeft, monthKey, monthName, noSpendStreak, openMonthOf, pace, perDay, totals} from './ledger.js?v=40';
+import {openPurchase} from './purchase.js?v=40';
+import {entryRow, openCloseMonth} from './month-flows.js?v=40';
 
 const PACE_LABEL = {track: 'On track', hot: 'Spending fast', over: 'Over budget', tight: 'No room'};
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
