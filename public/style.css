@@ -91,6 +91,9 @@ button.tile:focus-visible{outline:2px solid #ffffffb3;outline-offset:2px}
 .hero-value{display:block;margin-top:auto;text-align:right;font-size:min(92px,24cqw);font-weight:700;letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
 .hero-meta{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-top:14px;font-size:13px;color:var(--soft)}
 .hero-meta span:last-child{color:var(--muted);text-align:right}
+.hero-meta.hero-period{margin-top:12px;align-items:baseline}
+.hero-meta.hero-period + .hero-meta{margin-top:6px}
+.hero-meta.hero-period span:last-child{color:var(--text,inherit);font-weight:600}
 .hero.is-over .hero-value{color:var(--bad)}
 .hero.is-bumped{animation:bump .7s var(--spring)}
 @keyframes bump{30%{transform:scale(1.018)}}

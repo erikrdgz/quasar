@@ -43,6 +43,7 @@ export function renderPlans() {
       <div class="tile-head"><span class="tile-label">Left each month</span>${locked ? `<span class="status" data-pace="${synced ? 'track' : 'hot'}">${synced ? 'Your budget' : 'Changed'}</span>` : ''}</div>
       <span class="hero-value" id="planLeft"></span>
       <div class="allocation" aria-hidden="true">${alloc.map(([n, color]) => `<span style="flex:${Math.max(0, n) / denom};background:${color}"></span>`).join('')}</div>
+      <div class="hero-meta hero-period"><span>Per pay period</span><span>${c.left >= 0 ? money(c.left * 12 / 26) : `−${money(-c.left * 12 / 26)}`}</span></div>
       <div class="hero-meta"><span>${c.left >= 0 ? `${money(c.left * 12 / 52)} / week` : `Cut ${money(-c.left)} to balance`}</span><span>${money(c.left * 12)} / year</span></div>
     </button>
     <button type="button" class="tile" data-tile="p-income">
