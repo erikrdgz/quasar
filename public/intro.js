@@ -9,26 +9,12 @@ import {flush} from './store.js?v=22';
 const curve = samples(220, 22);
 const intro = () => document.getElementById('intro');
 const logo = `<div class="intro-mark" aria-hidden="true">
-  <img class="intro-logo-source" src="./icon-512.png" alt="" width="168" height="168" decoding="async">
-  <svg class="intro-orbit" viewBox="0 0 512 512" aria-hidden="true">
-    <defs>
-      <filter id="intro-ring-soft"><feGaussianBlur stdDeviation="2"/></filter>
-      <filter id="intro-seam-soft"><feGaussianBlur stdDeviation="9"/></filter>
-      <mask id="intro-ring-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512"><g filter="url(#intro-ring-soft)"><circle cx="248" cy="245" r="160" fill="white"/><circle cx="248" cy="245" r="94" fill="black"/></g></mask>
-      <mask id="intro-clean-ring" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512"><rect width="512" height="512" fill="white"/><path d="M248 245L512 265V512H230Z" fill="black" filter="url(#intro-seam-soft)"/></mask>
-      <mask id="intro-ring-patch" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512"><path d="M248 245L512 265V512H230Z" fill="white" filter="url(#intro-seam-soft)"/></mask>
-    </defs>
-    <g mask="url(#intro-ring-mask)">
-      <image href="./icon-512.png" width="512" height="512" mask="url(#intro-clean-ring)"/>
-      <g mask="url(#intro-ring-patch)"><image href="./icon-512.png" width="512" height="512" transform="rotate(90 248 245)"/></g>
-    </g>
-  </svg>
+  <img class="intro-orbit" src="./quasar-ring.png" alt="" width="168" height="168" decoding="async">
   <svg class="intro-stroke" viewBox="0 0 512 512" aria-hidden="true">
-    <defs><clipPath id="intro-tail-clip"><path d="M248 272L318 286L458 427L344 382L283 340Z"/></clipPath><mask id="intro-tail-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512"><path class="intro-tail-draw" d="M259 286 Q318 315 444 415" pathLength="1" fill="none" stroke="white" stroke-width="84" stroke-linecap="round"/></mask></defs>
-    <image href="./icon-512.png" width="512" height="512" clip-path="url(#intro-tail-clip)" mask="url(#intro-tail-mask)"/>
+    <defs><mask id="intro-tail-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512"><path class="intro-tail-draw" d="M259 286 Q318 315 444 415" pathLength="1" fill="none" stroke="white" stroke-width="84" stroke-linecap="round"/></mask></defs>
+    <image href="./quasar-stroke.svg" width="512" height="512" mask="url(#intro-tail-mask)"/>
   </svg>
-  <img class="intro-logo-finish" src="./icon-512.png" alt="" width="168" height="168" decoding="async">
-  <img class="intro-logo-shine" src="./icon-512.png" alt="" width="168" height="168" decoding="async">
+  <img class="intro-logo-shine" src="./quasar-ring.png" alt="" width="168" height="168" decoding="async">
   <span class="intro-logo-flare"></span>
 </div>`;
 const logoReady = new WeakMap();
@@ -36,33 +22,35 @@ const logoReady = new WeakMap();
 // A signature in three beats: seat the reflective ring, write the diagonal,
 // then cut a single specular light across the completed mark.
 async function revealLogo(mark) {
-  try { await mark.querySelector('.intro-logo-source').decode(); } catch { /* Keep the welcome usable if the image fails. */ }
+  try { await mark.querySelector('.intro-orbit').decode(); } catch { /* Keep the welcome usable if the image fails. */ }
   if (!mark.isConnected) return;
   const orbit = mark.querySelector('.intro-orbit');
   const stroke = mark.querySelector('.intro-stroke');
   const draw = mark.querySelector('.intro-tail-draw');
-  const finish = mark.querySelector('.intro-logo-finish');
   if (reduceMotion()) {
-    finish.animate([{opacity: 0}, {opacity: 1}], {duration: 180, fill: 'both'});
+    draw.style.strokeDashoffset = '0';
+    [orbit, stroke].forEach(el => el.animate([{opacity: 0}, {opacity: 1}], {duration: 180, fill: 'both'}));
     return;
   }
-  // A quick 600ms turn, then a separate glass sparkle and a brief hold.
+  // Center the mark alone, then lift it into the completed welcome layout.
+  const lift = (mark.parentElement.getBoundingClientRect().height - mark.getBoundingClientRect().height) / 2;
+  mark.animate([{transform: `translateY(${lift}px)`}, {transform: 'translateY(0px)'}], {duration: 420, delay: 1000, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'both'});
+  // A quick 350ms finishing turn, then a separate glass sparkle and a brief hold.
   orbit.animate([
-    {opacity: 0, transform: 'perspective(600px) rotateY(24deg) rotateZ(-360deg) scale(.92)', filter: 'blur(1.5px)', offset: 0},
-    {opacity: 1, transform: 'perspective(600px) rotateY(18deg) rotateZ(-315deg) scale(.96)', filter: 'blur(.4px)', offset: .12},
-    {opacity: 1, transform: 'perspective(600px) rotateY(-12deg) rotateZ(-90deg) scale(1)', filter: 'blur(.3px)', offset: .60, easing: 'cubic-bezier(.12,.45,.18,1)'},
+    {opacity: 0, transform: 'perspective(600px) rotateY(12deg) rotateZ(-90deg) scale(.98)', filter: 'blur(1.5px)', offset: 0},
+    {opacity: 1, transform: 'perspective(600px) rotateY(8deg) rotateZ(-78.75deg) scale(.99)', filter: 'blur(.4px)', offset: .12},
+    {opacity: 1, transform: 'perspective(600px) rotateY(-2deg) rotateZ(-22.5deg) scale(1)', filter: 'blur(.3px)', offset: .60, easing: 'cubic-bezier(.12,.45,.18,1)'},
     {opacity: 1, transform: 'perspective(600px) rotateY(0deg) rotateZ(0deg) scale(1)', filter: 'blur(0px)', offset: 5 / 6},
-    {opacity: 0, transform: 'perspective(600px) rotateY(0deg) rotateZ(0deg) scale(1)', filter: 'blur(0px)', offset: 1}
-  ], {duration: 720, easing: 'linear', fill: 'both'});
-  stroke.animate([{opacity: 0}, {opacity: 1, offset: .25}, {opacity: 0}], {duration: 250, delay: 600, fill: 'both'});
-  draw.animate([{strokeDashoffset: '1'}, {strokeDashoffset: '0'}], {duration: 220, delay: 600, easing: 'cubic-bezier(.3,0,.15,1)', fill: 'both'});
-  finish.animate([{opacity: 0}, {opacity: 1}], {duration: 100, delay: 620, fill: 'both'});
+    {opacity: 1, transform: 'perspective(600px) rotateY(0deg) rotateZ(0deg) scale(1)', filter: 'blur(0px)', offset: 1}
+  ], {duration: 420, easing: 'linear', fill: 'both'});
+  stroke.animate([{opacity: 0}, {opacity: 1, offset: .25}, {opacity: 1}], {duration: 250, delay: 350, fill: 'both'});
+  draw.animate([{strokeDashoffset: '1'}, {strokeDashoffset: '0'}], {duration: 220, delay: 350, easing: 'cubic-bezier(.3,0,.15,1)', fill: 'both'});
   mark.querySelector('.intro-logo-shine').animate([
     {opacity: 0, maskPosition: '130% 0', webkitMaskPosition: '130% 0', offset: 0},
     {opacity: .95, maskPosition: '100% 0', webkitMaskPosition: '100% 0', offset: .16},
     {opacity: .85, maskPosition: '0% 0', webkitMaskPosition: '0% 0', offset: .82},
     {opacity: 0, maskPosition: '-30% 0', webkitMaskPosition: '-30% 0', offset: 1}
-  ], {duration: 400, delay: 660, easing: 'cubic-bezier(.25,.1,.25,1)', fill: 'both'});
+  ], {duration: 400, delay: 410, easing: 'cubic-bezier(.25,.1,.25,1)', fill: 'both'});
   // A small specular glint follows the glass rim before blooming at the stroke.
   mark.querySelector('.intro-logo-flare').animate([
     {opacity: 0, transform: 'translate(28%,-154%) rotate(-28deg) scale(.45)', offset: 0},
@@ -70,22 +58,32 @@ async function revealLogo(mark) {
     {opacity: 1, transform: 'translate(0%,0%) rotate(12deg) scale(1.15)', offset: .57},
     {opacity: .45, transform: 'translate(0%,0%) rotate(18deg) scale(.8)', offset: .76},
     {opacity: 0, transform: 'translate(0%,0%) rotate(22deg) scale(.35)', offset: 1}
-  ], {duration: 600, delay: 650, easing: 'linear', fill: 'both'});
+  ], {duration: 600, delay: 400, easing: 'linear', fill: 'both'});
 }
 
-function springIn(el, {y = 24, scale = 0.94, delay = 0} = {}) {
+function springIn(el, {y = 24, scale = 0.94, delay = 0, duration = 700} = {}) {
   if (reduceMotion()) return el.animate([{opacity: 0}, {opacity: 1}], {duration: 200, delay, fill: 'backwards'});
-  return el.animate(curve.map((v, i) => ({opacity: Math.min(1, i / 12), transform: `translateY(${(1 - v) * y}px) scale(${scale + (1 - scale) * v})`, offset: i / 60})), {duration: 700, delay, easing: 'linear', fill: 'backwards'});
+  return el.animate(curve.map((v, i) => ({opacity: Math.min(1, i / 12), transform: `translateY(${(1 - v) * y}px) scale(${scale + (1 - scale) * v})`, offset: i / 60})), {duration, delay, easing: 'linear', fill: 'backwards'});
 }
 
 function swap(html) {
   const root = intro();
   root.innerHTML = `<div class="intro-step">${html}</div>`;
   const step = root.querySelector('.intro-step');
-  [...step.children].forEach((el, i) => {
-    if (el.classList.contains('intro-mark')) logoReady.set(step, revealLogo(el));
-    else springIn(el, {delay: i * 90});
-  });
+  const mark = step.querySelector('.intro-mark');
+  if (mark) {
+    const content = [...step.children].filter(el => el !== mark);
+    content.forEach(el => { el.style.opacity = '0'; el.inert = true; });
+    const ready = revealLogo(mark);
+    logoReady.set(step, ready);
+    ready.then(() => {
+      if (!step.isConnected) return;
+      content.forEach((el, i) => {
+        el.style.removeProperty('opacity');
+        springIn(el, {y: 16, scale: 1, delay: reduceMotion() ? 0 : 1000 + i * 70, duration: 420}).finished.then(() => { el.inert = false; });
+      });
+    });
+  } else [...step.children].forEach((el, i) => springIn(el, {delay: i * 90}));
   return root.querySelector('.intro-step');
 }
 
@@ -128,10 +126,10 @@ export function showWelcome(text = null) {
   root.querySelector('.intro-greeting').textContent = line;
   root.querySelector('p').textContent = subline();
   root.setAttribute('aria-label', line);
-  // Spin ends at 600ms, sparkle at 1250ms, and app entry at 2050ms.
+  // Turn ends at 350ms, sparkle at 1000ms, content by 1560ms, app entry at 2150ms.
   let timer;
   Promise.resolve(logoReady.get(step)).then(() => {
-    if (step.isConnected && !root.dataset.leaving) timer = setTimeout(dismiss, reduceMotion() ? 1100 : 1550);
+    if (step.isConnected && !root.dataset.leaving) timer = setTimeout(dismiss, reduceMotion() ? 1100 : 1650);
   });
   root.addEventListener('click', () => { clearTimeout(timer); dismiss(); }, {once: true});
 }
