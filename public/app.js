@@ -1,16 +1,16 @@
 // Quasar: compare plans, lock one in, then track what's left each month.
-import {ctx, $, esc, money, toast, modal} from './context.js?v=34';
-import {icon} from './icons.js?v=34';
-import './fields.js?v=34';
-import {load, flush, backupBlob, readBackup, eraseAll} from './store.js?v=34';
-import {samples, reduceMotion, holdToConfirm} from './motion.js?v=34';
-import {attachSwipe} from './swipe.js?v=34';
-import {blank, calculate, uid} from './finance.js?v=34';
-import {closePanel, panelOpen} from './expand.js?v=34';
-import {renderToday, setupToday} from './today.js?v=34';
-import {renderLedger, setupLedger} from './ledger-view.js?v=34';
-import {renderPlans, setupPlans} from './plans-view.js?v=34';
-import {runIntro} from './intro.js?v=34';
+import {ctx, $, esc, money, toast, modal} from './context.js?v=35';
+import {icon} from './icons.js?v=35';
+import './fields.js?v=35';
+import {load, flush, backupBlob, readBackup, eraseAll} from './store.js?v=35';
+import {samples, reduceMotion, holdToConfirm} from './motion.js?v=35';
+import {attachSwipe} from './swipe.js?v=35';
+import {blank, calculate, uid} from './finance.js?v=35';
+import {closePanel, panelOpen} from './expand.js?v=35';
+import {renderToday, setupToday} from './today.js?v=35';
+import {renderLedger, setupLedger} from './ledger-view.js?v=35';
+import {renderPlans, setupPlans} from './plans-view.js?v=35';
+import {runIntro} from './intro.js?v=35';
 
 const VIEWS = {today: renderToday, ledger: renderLedger, plans: renderPlans};
 const curve = samples(300, 28);
@@ -102,7 +102,7 @@ $('modalBody').addEventListener('click', async e => {
   } else if (b.dataset.exportPlan) {
     const plan = s.plans.find(p => p.id === b.dataset.exportPlan);
     b.disabled = true;
-    try { const {downloadPlanPdf} = await import('./plan-pdf.js?v=34'); await downloadPlanPdf(structuredClone(plan)); }
+    try { const {downloadPlanPdf} = await import('./plan-pdf.js?v=35'); await downloadPlanPdf(structuredClone(plan)); }
     catch { toast('Could not create the PDF. Try again.'); }
     finally { b.disabled = false; }
   } else if (b.dataset.exportBackup !== undefined) {

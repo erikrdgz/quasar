@@ -1,11 +1,11 @@
 // First run: the logo, then a short setup walkthrough (setup.js).
 // Every launch after that: a short welcome with the logo and a greeting.
-import {ctx, money} from './context.js?v=34';
-import {samples, reduceMotion} from './motion.js?v=34';
-import {openMonthOf, totals, monthName, lockIn} from './ledger.js?v=34';
-import {startSetup} from './setup.js?v=34';
-import {pickGreeting} from './greeting.js?v=34';
-import {flush, persist} from './store.js?v=34';
+import {ctx, money} from './context.js?v=35';
+import {samples, reduceMotion} from './motion.js?v=35';
+import {openMonthOf, totals, monthName, lockIn} from './ledger.js?v=35';
+import {startSetup} from './setup.js?v=35';
+import {pickGreeting} from './greeting.js?v=35';
+import {flush, persist} from './store.js?v=35';
 
 const curve = samples(220, 22);
 const intro = () => document.getElementById('intro');
@@ -137,7 +137,12 @@ export function showWelcome(text = null) {
 
 function onboarding() {
   const step1 = swap(`${logo}<h1>Quasar</h1><p>See what you'll have each month, then watch it as you spend.</p><button type="button" class="button primary intro-button">Get started</button>`);
-  step1.querySelector('button').addEventListener('click', () => {
+  step1.querySelector('button').addEventListener('click', async () => {
+    // Glide the welcome away before the walkthrough eases in.
+    const leaving = reduceMotion()
+      ? step1.animate([{opacity: 1}, {opacity: 0}], {duration: 140, fill: 'forwards'})
+      : step1.animate([{opacity: 1, transform: 'none'}, {opacity: 0, transform: 'translateX(-44px)'}], {duration: 300, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards'});
+    await leaving.finished;
     startSetup(intro(), {
       back: onboarding,
       finish: async ({locked}) => {

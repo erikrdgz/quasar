@@ -558,3 +558,7 @@ input.has-clear{padding-right:38px!important}
 
 /* Progress fills always end in a round cap. */
 .goal-progress,.goal-progress span,.mini-progress,.mini-progress span,.meter>span,.setup-progress,.setup-progress span{border-radius:999px}
+
+/* Setup pages slide side by side inside a clipped stage. */
+.setup-stage{overflow:hidden}
+.setup-page{will-change:transform}

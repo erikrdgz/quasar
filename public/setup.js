@@ -1,14 +1,17 @@
 // First-run setup: one full-screen question per step with Back, Skip and a
 // percentage bar. Answers are written straight into the first plan, so going
 // back shows what was entered, and any step can be skipped.
-import {ctx, esc, money, cash} from './context.js?v=34';
-import {icon} from './icons.js?v=34';
-import {samples, reduceMotion, slideToConfirm, movePill} from './motion.js?v=34';
-import {calculate, uid, usesTakeHome} from './finance.js?v=34';
+import {ctx, esc, money, cash} from './context.js?v=35';
+import {icon} from './icons.js?v=35';
+import {samples, reduceMotion, slideToConfirm, movePill} from './motion.js?v=35';
+import {calculate, uid, usesTakeHome} from './finance.js?v=35';
 
-import {CATEGORIES, STEPS, percentAt} from './setup-steps.js?v=34';
+import {CATEGORIES, STEPS, percentAt} from './setup-steps.js?v=35';
 
 const curve = samples(260, 26);
+// Critically damped: pages travel together and stop without bouncing.
+const push = samples(200, 28.3);
+const PUSH_MS = 680;
 const parse = text => { const n = Number(String(text).replace(/[^\d.]/g, '')); return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0; };
 // Live thousands separators while typing, keeping up to two decimals.
 function formatTyping(raw) {
@@ -43,7 +46,8 @@ export function startSetup(root, {back, finish}) {
     </div>
     <div class="setup-stage"></div>
   </div>`;
-  const stage = root.querySelector('.setup-stage'), bar = root.querySelector('.setup-progress');
+  const stage = root.querySelector('.setup-stage'), bar = root.querySelector('.setup-progress'), shell = root.querySelector('.setup');
+  if (!reduceMotion()) root.querySelector('.setup-top').animate([{opacity: 0}, {opacity: 1}], {duration: 360, easing: 'ease-out'});
   root.querySelector('.setup-back').addEventListener('click', goBack);
   root.querySelector('.setup-skip').addEventListener('click', () => { skip(); });
   root.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); goBack(); } });
@@ -51,16 +55,30 @@ export function startSetup(root, {back, finish}) {
   const plan = () => ctx.plan();
   const save = () => ctx.commit({render: false});
 
-  function goBack() { if (index === 0) back(); else show(index - 1, -1); }
+  // Leaving setup glides the whole screen out before the next screen eases in.
+  let leaving = false;
+  function leave(direction) {
+    leaving = true;
+    if (reduceMotion()) return shell.animate([{opacity: 1}, {opacity: 0}], {duration: 160, fill: 'forwards'}).finished;
+    return shell.animate([{opacity: 1, transform: 'none'}, {opacity: 0, transform: `translateX(${-direction * 44}px)`}], {duration: 320, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards'}).finished;
+  }
+  const done = result => { if (!leaving) leave(1).then(() => finish(result)); };
+  function goBack() { if (leaving) return; if (index === 0) leave(-1).then(back); else show(index - 1, -1); }
   function next() { show(index + 1, 1); }
   // Skip means "doesn't apply": clear that answer, then move on.
   function skip() {
     const id = STEPS[index], cat = CATEGORIES.find(c => c.id === id);
     if (cat) { if (cat.id === 'car') plan().car = 0; else setExpense(plan(), cat.name, 0); save(); }
-    if (id === 'summary') finish({locked: false}); else next();
+    if (id === 'summary') done({locked: false}); else next();
   }
 
+  // Continue/Skip push the current screen out left as the next slides in from
+  // the right; Back is the mirror. Both pages ride one spring, side by side, so
+  // nothing overlaps or cross-fades. A tap mid-transition snaps it to its end.
+  let moving = null;
   function show(i, direction) {
+    if (leaving) return;
+    if (moving) { moving.forEach(a => a.finish()); moving = null; }
     index = i;
     const id = STEPS[i], pct = percentAt(i);
     bar.querySelector('span').style.width = pct + '%';
@@ -71,18 +89,28 @@ export function startSetup(root, {back, finish}) {
     const page = document.createElement('div');
     page.className = 'setup-page';
     page.innerHTML = id === 'name' ? nameHTML() : id === 'plan' ? planHTML() : id === 'summary' ? summaryHTML() : categoryHTML(CATEGORIES.find(c => c.id === id));
-    const old = stage.firstElementChild;
+    const old = stage.querySelector('.setup-page:not(.is-leaving)');
+    if (old) { old.classList.add('is-leaving'); old.inert = true; }
     stage.append(page);
-    if (old) {
-      old.classList.add('is-leaving');
-      old.inert = true;
-      const exit = reduceMotion() ? [{opacity: 1}, {opacity: 0}] : [{opacity: 1, transform: 'none'}, {opacity: 0, transform: `translateX(${-direction * 36}px)`}];
-      old.animate(exit, {duration: 200, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards'}).finished.then(() => old.remove());
-    }
-    if (direction && !reduceMotion()) {
-      page.animate(curve.map((v, n) => ({opacity: Math.min(1, n / 10), transform: `translateX(${(1 - v) * direction * 48}px)`, offset: n / 60})), {duration: 560, easing: 'linear', fill: 'backwards'});
-    }
     wire(id, page);
+
+    if (reduceMotion()) {
+      old?.remove();
+      page.animate([{opacity: 0}, {opacity: 1}], {duration: 180});
+      return;
+    }
+    if (!old) {
+      // First screen: ease in from the side with nothing leaving.
+      page.animate(curve.map((v, n) => ({opacity: Math.min(1, n / 12), transform: `translateX(${(1 - v) * direction * 40}px)`, offset: n / 60})), {duration: 600, easing: 'linear', fill: 'backwards'});
+      return;
+    }
+    const w = stage.clientWidth;
+    const slide = (from, to) => push.map((v, n) => ({transform: `translateX(${from + (to - from) * v}px)`, offset: n / (push.length - 1)}));
+    const incoming = page.animate(slide(direction * w, 0), {duration: PUSH_MS, easing: 'linear', fill: 'backwards'});
+    const outgoing = old.animate(slide(0, -direction * w), {duration: PUSH_MS, easing: 'linear', fill: 'forwards'});
+    moving = [incoming, outgoing];
+    outgoing.finished.then(() => old.remove(), () => old.remove());
+    incoming.finished.then(() => { if (moving?.[0] === incoming) moving = null; }, () => {});
   }
 
   function amountField(value, label, suffix = '/ month') {
@@ -135,7 +163,7 @@ export function startSetup(root, {back, finish}) {
       const go = () => { ctx.state.prefs.name = input.value.trim().slice(0, 40); save(); next(); };
       continueButton.addEventListener('click', go);
       enter(input, go);
-      input.focus();
+      input.focus({preventScroll: true});
     } else if (id === 'plan') {
       const name = page.querySelector('.setup-plan-name'), seg = page.querySelector('.setup-income-mode');
       const store = () => {
@@ -160,17 +188,17 @@ export function startSetup(root, {back, finish}) {
         amount.setAttribute('aria-label', mode ? 'Monthly take-home pay' : 'Annual salary');
         page.querySelector('.setup-amount em').textContent = mode ? '/ month' : '/ year';
         page.querySelector('.setup-income-note').textContent = fresh.querySelector('.setup-income-note').textContent;
-        amount.focus();
+        amount.focus({preventScroll: true});
       });
       requestAnimationFrame(() => movePill(seg));
-      enter(name, () => amount.focus());
+      enter(name, () => amount.focus({preventScroll: true}));
       enter(amount, () => { store(); next(); });
       continueButton.addEventListener('click', () => { store(); next(); });
-      (name.value ? amount : name).focus();
+      (name.value ? amount : name).focus({preventScroll: true});
     } else if (id === 'summary') {
       const lock = page.querySelector('.setup-lock');
-      if (lock) slideToConfirm(lock, () => finish({locked: true}), {label: 'slide to lock in', done: 'Locked in', icon: icon('arrow'), doneIcon: icon('lock')});
-      page.querySelector('.setup-explore').addEventListener('click', () => finish({locked: false}));
+      if (lock) slideToConfirm(lock, () => done({locked: true}), {label: 'slide to lock in', done: 'Locked in', icon: icon('arrow'), doneIcon: icon('lock')});
+      page.querySelector('.setup-explore').addEventListener('click', () => done({locked: false}));
     } else {
       const cat = CATEGORIES.find(c => c.id === id);
       const store = () => { const value = Math.min(1e6, parse(amount.value)); if (cat.id === 'car') plan().car = value; else setExpense(plan(), cat.name, value); save(); };
@@ -178,7 +206,7 @@ export function startSetup(root, {back, finish}) {
       enter(amount, () => { store(); next(); });
       continueButton.addEventListener('click', () => { store(); next(); });
       page.querySelector('.setup-finish-early').addEventListener('click', () => { store(); show(STEPS.length - 1, 1); });
-      amount.focus();
+      amount.focus({preventScroll: true});
     }
   }
 

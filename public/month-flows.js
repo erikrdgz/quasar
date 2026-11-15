@@ -1,9 +1,9 @@
 // Reality check, Close Month (press-and-hold) and closed-month history panels.
-import {ctx, esc, money, cash, toast} from './context.js?v=34';
-import {icon} from './icons.js?v=34';
-import {openPanel} from './expand.js?v=34';
-import {holdToConfirm, movePill} from './motion.js?v=34';
-import {category, closeMonth, canReopen, reopenLast, closedMonths, daysLeft, followingKey, makeEntry, monthKey, monthName, openMonthOf, realityGap, totals} from './ledger.js?v=34';
+import {ctx, esc, money, cash, toast} from './context.js?v=35';
+import {icon} from './icons.js?v=35';
+import {openPanel} from './expand.js?v=35';
+import {holdToConfirm, movePill} from './motion.js?v=35';
+import {category, closeMonth, canReopen, reopenLast, closedMonths, daysLeft, followingKey, makeEntry, monthKey, monthName, openMonthOf, realityGap, totals} from './ledger.js?v=35';
 
 const parse = text => { const n = Number(String(text).replace(/[$,\s]/g, '')); return Number.isFinite(n) ? Math.round(n * 100) / 100 : NaN; };
 

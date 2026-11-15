@@ -3,7 +3,7 @@
 //    right edge; clearing keeps focus so the keyboard stays up,
 //  • focusing a field puts the cursor at the end, not the start,
 //  • number fields ([data-num]) accept only digits and one decimal point.
-import {icon} from './icons.js?v=34';
+import {icon} from './icons.js?v=35';
 
 const TEXT_FIELDS = 'input[type=text], input[type=search], input[type=email], input[type=tel], input[type=url], input:not([type])';
 const isTextField = el => el instanceof HTMLInputElement && el.matches(TEXT_FIELDS) && !el.matches('[data-no-clear]');
