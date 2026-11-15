@@ -12,4 +12,4 @@ function finish(e,cancel=false){if(!drag||drag.id!==e.pointerId)return;const d=d
 front.addEventListener('pointerup',e=>finish(e));front.addEventListener('pointercancel',e=>finish(e,true));
 front.addEventListener('click',e=>{if(e.target.closest('.swipe-options'))return;if(suppress||x< -10){e.preventDefault();e.stopPropagation();if(!suppress)spring(0);suppress=false;}},true);
 front.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'){e.preventDefault();measure();spring(-reveal);del.focus();}if(e.key==='Escape'||e.key==='ArrowRight'){e.preventDefault();spring(0);}});
-options.addEventListener('click',e=>{e.stopPropagation();if(onOptions){spring(0);onOptions();}else spring(x< -40?0:-reveal);});del.addEventListener('click',e=>{e.stopPropagation();remove();});paint();return {remove};}
+options?.addEventListener('click',e=>{e.stopPropagation();if(onOptions){spring(0);onOptions();}else spring(x< -40?0:-reveal);});del.addEventListener('click',e=>{e.stopPropagation();remove();});paint();return {remove};}

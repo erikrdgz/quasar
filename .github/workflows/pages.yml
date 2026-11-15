@@ -1,4 +1,4 @@
-name: Deploy Room
+name: Deploy Quasar
 on:
   push:
     branches: [main]
