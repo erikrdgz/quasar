@@ -8,8 +8,8 @@
 //   • the app behind, which recedes and dims.
 // Geometry is always measured with the app unscaled, and a close that interrupts
 // an open reverses from wherever the card is at that moment.
-import {icon} from './icons.js?v=22';
-import {reduceMotion} from './motion.js?v=22';
+import {icon} from './icons.js?v=32';
+import {reduceMotion} from './motion.js?v=32';
 
 // iOS-style spring described by response (seconds) and damping ratio.
 function spring(response, dampingRatio) {
@@ -32,9 +32,12 @@ const clamp = (n, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, n));
 const radiusOf = el => parseFloat(getComputedStyle(el).borderTopLeftRadius) || 24;
 const rectOf = el => { const r = el.getBoundingClientRect(); return {top: r.top, left: r.left, width: r.width, height: r.height}; };
 
-let active = null;
-export const panelOpen = () => !!active;
-export function closePanel() { return active?.close() || Promise.resolve(); }
+// Open panels, bottom to top. A panel opened with {nested: true} stacks on the
+// one below it (which recedes like the app does); any other open closes them all.
+const stack = [];
+export const panelOpen = () => stack.length > 0;
+// Closes everything (e.g. on a tab switch): stacked panels instantly, the bottom one animated.
+export function closePanel() { while (stack.length > 1) stack.at(-1).close(true); return stack[0]?.close() || Promise.resolve(); }
 
 function cloneTile(tile, rect) {
   const ghost = tile.cloneNode(true);
@@ -49,13 +52,16 @@ function cloneTile(tile, rect) {
 
 /**
  * @param origin  the tapped tile (data-tile lets it be found again after re-renders)
- * @param opts    {tone, title, build(body, api), onClose, initialFocus(body)}
+ * @param opts    {tone, title, build(body, api), onClose, initialFocus(body), nested}
  */
 export function openPanel(origin, opts) {
-  if (active) active.close(true);
+  const parent = opts.nested ? stack.at(-1) || null : null;
+  if (!parent) while (stack.length) stack.at(-1).close(true);
   const key = origin.dataset.tile;
   const findOrigin = () => (origin.isConnected ? origin : key && document.querySelector(`[data-tile="${key}"]`));
   const app = document.getElementById('app'), tabbar = document.querySelector('.tabbar');
+  // What recedes behind this panel: the app, or the panel it opened from.
+  const behind = parent ? parent.panel : app;
 
   const from = rectOf(origin), fromRadius = radiusOf(origin);
   const layer = document.createElement('div');
@@ -64,14 +70,18 @@ export function openPanel(origin, opts) {
   const panel = layer.querySelector('.panel'), inner = layer.querySelector('.panel-inner'), body = layer.querySelector('.panel-body');
   const backdrop = layer.querySelector('.panel-backdrop'), aside = layer.querySelector('.panel-aside');
   layer.querySelector('h2').textContent = opts.title || '';
+  if (opts.style) panel.setAttribute('style', opts.style);
   document.body.append(layer);
-  document.documentElement.classList.add('panel-open');
-  app.inert = true;
-  if (tabbar) tabbar.inert = true;
+  if (parent) parent.layer.inert = true;
+  else {
+    document.documentElement.classList.add('panel-open');
+    app.inert = true;
+    if (tabbar) tabbar.inert = true;
+  }
 
   let running = [], run = null;
   const api = {
-    panel, body, layer,
+    panel, body, layer, parent,
     setAside(html) { aside.innerHTML = html; },
     setTitle(text) { layer.querySelector('h2').textContent = text; },
     close,
@@ -100,7 +110,7 @@ export function openPanel(origin, opts) {
         opacity: opening ? clamp(1 - p / 0.32) : clamp(1 - p / 0.5),
       },
       backdrop: {opacity: clamp(p)},
-      app: {transform: `scale(${1 - 0.06 * p})`, filter: `brightness(${1 - 0.5 * clamp(p)})`},
+      behind: {transform: `scale(${1 - (parent ? 0.04 : 0.06) * p})`, filter: `brightness(${1 - 0.5 * clamp(p)})`},
     };
   }
 
@@ -108,7 +118,7 @@ export function openPanel(origin, opts) {
     const steps = curve.values.map(v => frames(tile, tileRadius, ghostRect, lerp(p0, p1, v), phase));
     const timing = {duration: Math.max(1, curve.duration * Math.sqrt(Math.abs(p1 - p0))), easing: 'linear', fill: 'both'};
     const track = (el, part) => el.animate(steps.map((s, i) => ({...s[part], offset: i / (steps.length - 1)})), timing);
-    running = [track(panel, 'panel'), track(inner, 'inner'), track(ghost, 'ghost'), track(backdrop, 'backdrop'), track(app, 'app')];
+    running = [track(panel, 'panel'), track(inner, 'inner'), track(ghost, 'ghost'), track(backdrop, 'backdrop'), track(behind, 'behind')];
     run = {curve, p0, p1, start: performance.now(), duration: timing.duration};
     return Promise.all(running.map(a => a.finished));
   }
@@ -120,7 +130,7 @@ export function openPanel(origin, opts) {
     return lerp(run.p0, run.p1, values[Math.min(values.length - 1, Math.round(t * (values.length - 1)))]);
   }
 
-  app.style.transformOrigin = `50% ${scrollY + innerHeight / 2}px`;
+  if (!parent) app.style.transformOrigin = `50% ${scrollY + innerHeight / 2}px`;
   if (reduceMotion()) {
     ghost.remove();
     layer.animate([{opacity: 0}, {opacity: 1}], {duration: 160});
@@ -131,7 +141,8 @@ export function openPanel(origin, opts) {
   const focusTarget = opts.initialFocus?.(body) || layer.querySelector('.panel-close');
   focusTarget.focus({preventScroll: true});
 
-  function onKey(e) { if (e.key === 'Escape') { e.preventDefault(); close(); } }
+  // Only the top panel answers Escape.
+  function onKey(e) { if (e.key === 'Escape' && stack.at(-1) === api) { e.preventDefault(); close(); } }
   document.addEventListener('keydown', onKey);
   layer.querySelector('.panel-close').addEventListener('click', () => close());
   backdrop.addEventListener('click', () => close());
@@ -140,13 +151,19 @@ export function openPanel(origin, opts) {
     document.removeEventListener('keydown', onKey);
     running.forEach(a => a.cancel());
     layer.remove();
-    document.documentElement.classList.remove('panel-open');
-    app.inert = false;
-    if (tabbar) tabbar.inert = false;
-    app.style.transformOrigin = '';
-    document.querySelectorAll('.is-origin').forEach(el => el.classList.remove('is-origin'));
-    findOrigin()?.focus?.({preventScroll: true});
-    if (active === api) active = null;
+    const index = stack.indexOf(api);
+    if (index >= 0) stack.splice(index, 1);
+    if (parent) parent.layer.inert = false;
+    else {
+      document.documentElement.classList.remove('panel-open');
+      app.inert = false;
+      if (tabbar) tabbar.inert = false;
+      app.style.transformOrigin = '';
+    }
+    const tile = findOrigin();
+    tile?.classList.remove('is-origin');
+    if (!parent) document.querySelectorAll('.is-origin').forEach(el => el.classList.remove('is-origin'));
+    tile?.focus?.({preventScroll: true});
   }
 
   // Resolves once the card is back in its tile and the layer is gone.
@@ -172,6 +189,6 @@ export function openPanel(origin, opts) {
     return (closed = animate(CLOSE, p0, 0, back, radiusOf(tile), back, 'close').then(cleanup, cleanup));
   }
 
-  active = api;
+  stack.push(api);
   return api;
 }

@@ -3,7 +3,7 @@
 // A budget is a snapshot of a plan taken when it is locked in. Fixed bills, the car
 // payment and goal savings are treated as already spoken for, so purchases only draw
 // down what is left after them ("spendable").
-import {calculate, uid} from './finance.js?v=22';
+import {calculate, uid} from './finance.js?v=32';
 
 export const CATEGORIES = [
   {id: 'groceries', label: 'Groceries', color: '#7fd1a4'},
@@ -130,6 +130,14 @@ export function lockIn(state, plan, now = new Date()) {
   if (!month) { month = openMonth(monthKey(now), state.budget); state.months.push(month); }
   else { month.allowance = state.budget.spendable; month.paid = month.paid.filter(id => state.budget.bills.some(b => b.id === id)); }
   return month;
+}
+
+// Unlocking stops tracking but keeps every month and purchase, so locking any
+// plan again picks the open month back up. Returns the old budget for undo.
+export function unlock(state) {
+  const previous = state.budget;
+  state.budget = null;
+  return previous;
 }
 
 // Consecutive days without a purchase, ending today if nothing was bought today,

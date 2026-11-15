@@ -1,15 +1,17 @@
 // Plans: compare salary scenarios. Each tile expands into its editor; a live
 // "left / month" readout in the panel header shows the effect while you drag.
-import {ctx, $, esc, money, cash, compact, toast} from './context.js?v=22';
-import {icon} from './icons.js?v=22';
-import {openPanel} from './expand.js?v=22';
-import {syncRange} from './sliders.js?v=22';
-import {attachSwipe} from './swipe.js?v=22';
-import {movePill, slideToConfirm, springIn, springText} from './motion.js?v=22';
-import {calculate, uid, spendingLimit, minimumSalary, carPriceRange, CAR_PRICE_ASSUMPTIONS, usesTakeHome, taxes} from './finance.js?v=22';
-import {createBudget, lockIn} from './ledger.js?v=22';
-import {persist} from './store.js?v=22';
+import {ctx, $, esc, money, cash, compact, toast} from './context.js?v=32';
+import {icon} from './icons.js?v=32';
+import {openPanel} from './expand.js?v=32';
+import {syncRange} from './sliders.js?v=32';
+import {attachSwipe} from './swipe.js?v=32';
+import {movePill, reduceMotion, slideToConfirm, springIn, springText} from './motion.js?v=32';
+import {calculate, uid, spendingLimit, minimumSalary, carPriceRange, CAR_PRICE_ASSUMPTIONS, usesTakeHome, taxes, GOAL_ICONS, goalIcon, GOAL_COLORS, goalColor} from './finance.js?v=32';
+import {createBudget, lockIn, unlock} from './ledger.js?v=32';
+import {persist} from './store.js?v=32';
 
+// Inline custom property for a goal's optional color.
+const tint = g => (goalColor(g) ? ` style="--goal:${goalColor(g)}"` : '');
 const numeric = el => Math.max(0, Number(el.value) || 0);
 const rentOf = plan => plan.expenses.find(e => /\brent\b/i.test(e.name));
 const lockedHere = plan => ctx.state.budget?.planId === plan.id;
@@ -59,12 +61,10 @@ export function renderPlans() {
     </button>
     <button type="button" class="tile span-2 short" data-tile="p-goals">
       <div class="tile-head"><span class="tile-icon">${icon('goals')}</span><span class="tile-label">Savings goals</span><span class="tile-chevron">${icon('chevron')}</span></div>
-      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:auto;padding-top:12px"><span class="tile-sub" style="margin:0">${plan.goals.length ? `${goalsActive} active goal${goalsActive === 1 ? '' : 's'}` : 'Save up for something'}</span><span class="tile-value">${money(c.savings)}<small>/ mo</small></span></div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:auto;padding-top:12px"><span class="tile-sub goal-icon-row" style="margin:0">${plan.goals.length ? `${plan.goals.slice(0, 5).map(g => `<i class="goal-chip${goalColor(g) ? ' has-color' : ''}"${tint(g)} title="${esc(g.name)}">${icon(goalIcon(g))}</i>`).join('')}${plan.goals.length > 5 ? `<span>+${plan.goals.length - 5}</span>` : ''}<span class="sr-only">${goalsActive} active goal${goalsActive === 1 ? '' : 's'}</span>` : 'Save up for something'}</span><span class="tile-value">${money(c.savings)}<small>/ mo</small></span></div>
     </button>
-    <button type="button" class="tile ${synced ? 'outline' : 'accent'} span-2 short" data-tile="p-lock">
-      <div class="tile-head"><span class="tile-icon">${icon('lock')}</span><span class="tile-label">${synced ? 'Locked in as your budget' : locked ? 'Update your budget' : 'Lock in this plan'}</span></div>
-      <div class="tile-foot"><span class="tile-sub" style="white-space:normal">${synced ? `Tracking since ${new Date(ctx.state.budget.lockedAt).toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}. Log purchases from Today.` : locked ? `This plan changed. Update to track with ${money(c.left)} a month.` : `Track this month with ${money(c.left)} to spend.`}</span></div>
-    </button>`;
+    ${lockTile(plan, c, synced, locked)}`;
+  wireLock(plan, synced, locked);
   springText('plan-left', $('planLeft'), c.left, money);
 }
 
@@ -100,7 +100,7 @@ function setLimits(body) {
   for (const row of body.querySelectorAll('[data-expense]')) {
     const e = plan.expenses.find(x => x.id === row.dataset.expense);
     if (!e) continue;
-    const max = spendingLimit(plan, e.id), input = row.querySelector('input[type=number]'), range = row.querySelector('input[type=range]');
+    const max = spendingLimit(plan, e.id), input = row.querySelector('input[data-num]'), range = row.querySelector('input[type=range]');
     input.max = max; if (document.activeElement !== input) input.value = e.amount;
     range.max = Math.floor(max); range.value = e.amount; syncRange(range);
     row.querySelector('.spending-max').textContent = money(max);
@@ -108,7 +108,7 @@ function setLimits(body) {
 }
 
 function expenseRow(e) {
-  return `<div class="expense-item" data-expense="${e.id}"><div class="row"><input class="expense-name" data-field="name" value="${esc(e.name)}" maxlength="80" aria-label="Bill name" enterkeyhint="done"><span class="money-input"><span>$</span><input data-field="amount" type="number" min="0" step="0.01" inputmode="decimal" value="${e.amount}" aria-label="${esc(e.name)} monthly amount" enterkeyhint="done"></span><button type="button" class="remove" data-remove="${e.id}" aria-label="Remove ${esc(e.name)}">${icon('close')}</button></div><input type="range" min="0" step="1" data-field="amount" aria-label="${esc(e.name)} slider" value="${e.amount}"><div class="range-labels"><span>$0</span><span class="spending-max"></span></div></div>`;
+  return `<div class="expense-item" data-expense="${e.id}"><div class="row"><input class="expense-name" data-field="name" value="${esc(e.name)}" maxlength="80" aria-label="Bill name" enterkeyhint="done"><span class="money-input"><span>$</span><input data-field="amount" type="text" data-num min="0" step="0.01" inputmode="decimal" value="${e.amount}" aria-label="${esc(e.name)} monthly amount" enterkeyhint="done"></span><button type="button" class="remove" data-remove="${e.id}" aria-label="Remove ${esc(e.name)}">${icon('close')}</button></div><input type="range" min="0" step="1" data-field="amount" aria-label="${esc(e.name)} slider" value="${e.amount}"><div class="range-labels"><span>$0</span><span class="spending-max"></span></div></div>`;
 }
 
 // Shared input handling for bill rows (bills panel and rent panel).
@@ -122,12 +122,12 @@ function wireExpenses(body, afterChange) {
     const requested = numeric(ev.target), limit = spendingLimit(plan, item.id);
     item.amount = Math.min(requested, limit);
     if (item.amount !== requested && ev.type === 'change') toast('That would leave nothing to spend');
-    if (ev.target.type === 'number' && ev.type === 'change') ev.target.value = item.amount;
+    if (ev.target.dataset.num !== undefined && ev.type === 'change') ev.target.value = item.amount;
     ctx.commit();
     afterChange();
   };
-  body.addEventListener('input', ev => { if (ev.target.type !== 'number') edit(ev); else if (ev.target.value !== '') edit(ev); });
-  body.addEventListener('change', ev => { if (ev.target.type === 'number') edit(ev); });
+  body.addEventListener('input', ev => { if (ev.target.dataset.num === undefined) edit(ev); else if (ev.target.value !== '') edit(ev); });
+  body.addEventListener('change', ev => { if (ev.target.dataset.num !== undefined) edit(ev); });
 }
 
 function openIncome(origin) {
@@ -142,11 +142,11 @@ function openIncome(origin) {
         seg.querySelectorAll('button').forEach(b => { const on = b.dataset.mode === mode; b.classList.toggle('selected', on); b.setAttribute('aria-pressed', String(on)); });
         requestAnimationFrame(() => movePill(seg));
         fields.innerHTML = mode === 'salary' ? `
-          <div><label class="amount-field"><span>$</span><input id="salaryInput" type="number" inputmode="numeric" min="0" max="1000000" step="1000" value="${plan.salary}" aria-label="Annual salary" enterkeyhint="done"></label><p class="fine" style="margin-top:8px">per year, before tax</p></div>
+          <div><label class="amount-field"><span>$</span><input id="salaryInput" type="text" data-num inputmode="numeric" min="0" max="1000000" step="1000" value="${plan.salary}" aria-label="Annual salary" enterkeyhint="done"></label><p class="fine" style="margin-top:8px">per year, before tax</p></div>
           <div><input id="salarySlider" type="range" aria-label="Annual salary slider"><div class="range-labels"><span id="salaryMin"></span><span id="salaryMax"></span></div></div>
           <div class="group switch-row"><span>Colorado FAMLI<small>0.44% paid-leave premium</small></span><label class="switch"><input type="checkbox" role="switch" id="famli" ${plan.famli ? 'checked' : ''}><i></i></label></div>
           <p class="fine">Estimated for a 2026 single filer in Colorado with the standard deduction. If you live elsewhere or have pre-tax deductions like a 401(k) or health insurance, use Take-home for an exact number.</p>` : `
-          <div><label class="amount-field"><span>$</span><input id="takeHomeInput" type="number" inputmode="decimal" min="0" max="1000000" step="1" value="${plan.takeHome}" aria-label="Monthly take-home pay" enterkeyhint="done"></label><p class="fine" style="margin-top:8px">per month, after taxes and deductions</p></div>
+          <div><label class="amount-field"><span>$</span><input id="takeHomeInput" type="text" data-num inputmode="decimal" min="0" max="1000000" step="1" value="${plan.takeHome}" aria-label="Monthly take-home pay" enterkeyhint="done"></label><p class="fine" style="margin-top:8px">per month, after taxes and deductions</p></div>
           <p class="fine">Use what actually lands in your account in a typical month. Paid every two weeks? One paycheck × 26 ÷ 12.</p>`;
         setLimits(body);
         update();
@@ -220,7 +220,7 @@ function openRent(origin) {
     title: 'Rent',
     build(body, api) {
       const update = readout(api);
-      body.innerHTML = `<div data-expense="${rent.id}"><label class="amount-field"><span>$</span><input data-field="amount" type="number" inputmode="decimal" min="0" step="1" value="${rent.amount}" aria-label="Monthly rent" enterkeyhint="done"></label><p class="fine" style="margin:8px 0 10px">per month</p><input type="range" min="0" step="1" data-field="amount" aria-label="Rent slider" value="${rent.amount}"><div class="range-labels"><span>$0</span><span class="spending-max"></span></div></div>
+      body.innerHTML = `<div data-expense="${rent.id}"><label class="amount-field"><span>$</span><input data-field="amount" type="text" data-num inputmode="decimal" min="0" step="1" value="${rent.amount}" aria-label="Monthly rent" enterkeyhint="done"></label><p class="fine" style="margin:8px 0 10px">per month</p><input type="range" min="0" step="1" data-field="amount" aria-label="Rent slider" value="${rent.amount}"><div class="range-labels"><span>$0</span><span class="spending-max"></span></div></div>
         <p class="fine">Drag to see how a cheaper or pricier place changes what's left each month. Rent is also listed with your other bills.</p>`;
       wireExpenses(body, () => { setLimits(body); update(); });
       setLimits(body);
@@ -234,7 +234,7 @@ function openCar(origin) {
     title: 'Car',
     build(body, api) {
       const update = readout(api), plan = ctx.plan();
-      body.innerHTML = `<div><label class="amount-field"><span>$</span><input id="carInput" type="number" inputmode="decimal" min="0" step="25" value="${plan.car}" aria-label="Monthly car budget" enterkeyhint="done"></label><p class="fine" style="margin:8px 0 10px">per month for a car payment</p><input id="carSlider" type="range" min="0" step="1" aria-label="Car budget slider"><div class="range-labels"><span>$0</span><span id="carMax"></span></div></div>
+      body.innerHTML = `<div><label class="amount-field"><span>$</span><input id="carInput" type="text" data-num inputmode="decimal" min="0" step="25" value="${plan.car}" aria-label="Monthly car budget" enterkeyhint="done"></label><p class="fine" style="margin:8px 0 10px">per month for a car payment</p><input id="carSlider" type="range" min="0" step="1" aria-label="Car budget slider"><div class="range-labels"><span>$0</span><span id="carMax"></span></div></div>
         <div class="estimate"><span>Estimated car price</span><output id="carPrice"></output><p class="fine">${CAR_PRICE_ASSUMPTIONS}. Rates are assumptions, not lender quotes.</p></div>`;
       const set = (el, fromChange) => {
         const p = ctx.plan(), requested = numeric(el), cap = spendingLimit(p, 'car');
@@ -283,61 +283,31 @@ function openBills(origin) {
   });
 }
 
+const readyDate = months => new Date(new Date().getFullYear(), new Date().getMonth() + months, 1).toLocaleDateString('en-US', {month: 'short', year: 'numeric'});
+// "4 months · Mar 2027", or why there's no date yet.
+function timing(g) {
+  if (g.months === 0) return {months: 'Reached', date: 'Goal complete'};
+  if (g.months === null) return {months: '—', date: 'Nothing set aside yet'};
+  if (g.months > 1200) return {months: '100+ years', date: ''};
+  const y = Math.floor(g.months / 12), m = g.months % 12;
+  return {months: y >= 2 ? `${y}${m ? `.${Math.round(m / 12 * 10)}` : ''} years` : `${g.months} month${g.months === 1 ? '' : 's'}`, date: readyDate(g.months)};
+}
+
+// Goals list. Each card opens its own goal sheet stacked on top (goals are
+// targets over time, not monthly buckets, so they get a focused view).
 function openGoals(origin) {
-  let editing = null;
   openPanel(origin, {
     title: 'Savings goals',
     build(body, api) {
       const update = readout(api);
-      function results() {
-        const c = calculate(ctx.plan());
-        for (const g of c.goals) {
-          const el = body.querySelector(`[data-result="${g.id}"]`);
-          if (!el) continue;
-          const months = g.months;
-          const when = months === 0 ? 'Goal reached' : months === null ? 'Needs money left over' : months > 1200 ? 'More than 100 years' : `${months} month${months === 1 ? '' : 's'} · ${new Date(new Date().getFullYear(), new Date().getMonth() + months, 1).toLocaleDateString('en-US', {month: 'short', year: 'numeric'})}`;
-          el.innerHTML = `<span>${money(g.monthly)} / month</span><span>${when}</span>`;
-          body.querySelector(`[data-progress="${g.id}"]`).style.width = `${g.target > 0 ? Math.min(100, g.saved / g.target * 100) : 100}%`;
-        }
-        for (const g of ctx.plan().goals) {
-          const row = body.querySelector(`[data-goal="${g.id}"]`);
-          if (!row) continue;
-          for (const field of ['target', 'saved']) {
-            const input = row.querySelector(`input[type=number][data-field="${field}"]`), range = row.querySelector(`input[type=range][data-field="${field}"]`);
-            if (!input) continue;
-            if (document.activeElement !== input) input.value = g[field];
-            range.min = field === 'target' ? g.saved : 0;
-            range.max = field === 'target' ? Math.max(100000, g.target) : g.target;
-            range.value = g[field];
-            syncRange(range);
-          }
-        }
-        update();
-      }
+      body.classList.add('goal-list-body');
       function draw() {
-        const plan = ctx.plan();
-        if (!plan.goals.some(g => g.id === editing)) editing = null;
-        body.innerHTML = `<p class="lede">Goals share a slice of what's left after bills and car. Slow, medium and fast set aside 10%, 25% or 40%.</p>
-          <div id="goalList">${plan.goals.map(g => `<div class="goal ${g.id === editing ? 'is-editing' : ''}" data-goal="${g.id}">
-            <div class="goal-swipe swipe-row" data-item-id="${g.id}" ${g.id === editing ? 'hidden' : ''}><button type="button" class="swipe-delete" aria-label="Delete ${esc(g.name || 'goal')}">${icon('trash')}<span>Delete</span></button><div class="swipe-front"><button type="button" class="goal-summary" data-edit-goal="${g.id}"><span class="goal-summary-name">${esc(g.name.trim() || 'New goal')}</span><span class="goal-summary-total">${money(g.target)}</span></button><button type="button" class="swipe-options" aria-label="Edit ${esc(g.name || 'goal')}">${icon('edit')}</button></div></div>
-            <div class="goal-editor" ${g.id === editing ? '' : 'hidden'}>
-              <div class="goal-head"><input data-field="name" aria-label="Goal name" maxlength="80" value="${esc(g.name)}" enterkeyhint="done"><button type="button" class="confirm-goal" data-confirm-goal="${g.id}" aria-label="Done">${icon('check')}</button></div>
-              <div class="goal-fields"><label>Target ($)<input type="number" min="0" max="10000000" inputmode="decimal" data-field="target" value="${g.target}" enterkeyhint="done"><input type="range" step="100" data-field="target" aria-label="${esc(g.name)} target"></label><label>Already saved ($)<input type="number" min="0" inputmode="decimal" data-field="saved" value="${g.saved}" enterkeyhint="done"><input type="range" step="1" data-field="saved" aria-label="${esc(g.name)} saved"></label></div>
-              <div class="segmented" aria-label="Savings pace"><span class="pace-lens" aria-hidden="true"></span>${['slow', 'medium', 'fast'].map(p => `<button type="button" data-pace="${p}" class="${g.pace === p ? 'selected' : ''}" aria-pressed="${g.pace === p}">${p[0].toUpperCase() + p.slice(1)}</button>`).join('')}</div>
-              <div class="goal-result" data-result="${g.id}"></div><div class="goal-progress"><span data-progress="${g.id}"></span></div>
-              <button type="button" class="text-button remove-goal" data-remove-goal="${g.id}">${icon('trash')} Delete goal</button>
-            </div></div>`).join('')}</div>
+        const plan = ctx.plan(), c = calculate(plan);
+        body.innerHTML = `<div id="goalList">${c.goals.map(g => { const t = timing(g); return `<div class="goal" data-goal="${g.id}"${tint(g)}>
+            <div class="goal-swipe swipe-row" data-item-id="${g.id}"><button type="button" class="swipe-delete" aria-label="Delete ${esc(g.name || 'goal')}">${icon('trash')}<span>Delete</span></button><div class="swipe-front"><button type="button" class="goal-summary" data-edit-goal="${g.id}" data-tile="goal-${g.id}"><span class="goal-chip${goalColor(g) ? ' has-color' : ''}" aria-hidden="true"${tint(g)}>${icon(goalIcon(g))}</span><span class="goal-summary-text"><span class="goal-summary-name">${esc(g.name.trim() || 'New goal')}</span><small>${g.months === 0 ? 'Reached' : g.months === null ? t.date : `${money(g.monthly)}/mo · ${t.date}`}</small></span><span class="goal-summary-total">${money(g.target)}</span></button></div></div></div>`; }).join('')}</div>
           <button type="button" class="text-button" id="addGoal">${icon('plus')} Add goal</button>`;
-        results();
-        requestAnimationFrame(() => body.querySelectorAll('.segmented').forEach(movePill));
-        body.querySelectorAll('.goal-swipe:not([hidden])').forEach(row => attachSwipe(row, id => removeGoal(id), () => edit(row.dataset.itemId)));
-      }
-      function edit(id) {
-        editing = id; draw();
-        const el = body.querySelector(`[data-goal="${id}"]`), name = el?.querySelector('input');
-        if (!el) return;
-        name.focus({preventScroll: true});
-        requestAnimationFrame(() => { el.scrollIntoView({block: 'nearest', behavior: 'smooth'}); springIn(el); });
+        body.querySelectorAll('.goal-swipe').forEach(row => attachSwipe(row, id => removeGoal(id)));
+        update();
       }
       function removeGoal(id) {
         const plan = ctx.plan(), index = plan.goals.findIndex(g => g.id === id);
@@ -346,40 +316,133 @@ function openGoals(origin) {
         ctx.commit(); draw();
         toast('Goal deleted', () => { ctx.plan().goals.splice(Math.min(index, ctx.plan().goals.length), 0, removed); ctx.commit(); draw(); });
       }
-      const change = e => {
-        const row = e.target.closest('[data-goal]'), field = e.target.dataset.field;
-        if (!row || !field) return;
-        const g = ctx.plan().goals.find(x => x.id === row.dataset.goal);
-        if (field === 'name') { g.name = e.target.value; ctx.commit(); return; }
-        if (e.target.type === 'number' && e.target.value === '' && e.type === 'input') return;
-        g[field] = field === 'target' ? Math.max(g.saved, Math.min(1e7, numeric(e.target))) : Math.min(g.target, numeric(e.target));
-        if (e.type === 'change') e.target.value = g[field];
-        ctx.commit(); results();
-      };
-      body.addEventListener('input', change);
-      body.addEventListener('change', e => { if (e.target.type === 'number') change(e); });
       body.addEventListener('click', e => {
         const b = e.target.closest('button');
         if (!b) return;
         if (b.id === 'addGoal') {
           const plan = ctx.plan();
           if (plan.goals.length >= 30) return toast('Maximum 30 goals');
-          const goal = {id: uid(), name: 'New goal', target: 5000, saved: 0, pace: 'medium'};
-          plan.goals.push(goal); ctx.commit(); edit(goal.id);
-          body.querySelector(`[data-goal="${goal.id}"] input`)?.select();
-        } else if (b.dataset.editGoal) edit(b.dataset.editGoal);
-        else if (b.dataset.confirmGoal) { const g = ctx.plan().goals.find(x => x.id === b.dataset.confirmGoal); g.name = g.name.trim() || 'New goal'; editing = null; ctx.commit(); draw(); }
-        else if (b.dataset.removeGoal) removeGoal(b.dataset.removeGoal);
-        else if (b.dataset.pace) {
-          const row = b.closest('[data-goal]'), g = ctx.plan().goals.find(x => x.id === row.dataset.goal);
-          g.pace = b.dataset.pace;
-          row.querySelectorAll('[data-pace]').forEach(x => { x.classList.toggle('selected', x === b); x.setAttribute('aria-pressed', String(x === b)); });
-          movePill(row.querySelector('.segmented'));
-          ctx.commit(); results();
-        }
+          const goal = {id: uid(), name: '', target: 5000, saved: 0, pace: 'medium'};
+          plan.goals.push(goal); ctx.commit(); draw();
+          const card = body.querySelector(`[data-tile="goal-${goal.id}"]`);
+          card.scrollIntoView({block: 'nearest'});
+          openGoalSheet(card, goal.id, {redraw: draw, remove: removeGoal});
+        } else if (b.dataset.editGoal) openGoalSheet(b, b.dataset.editGoal, {redraw: draw, remove: removeGoal});
       });
       draw();
     },
+  });
+}
+
+// One goal, sized to fit a phone screen without scrolling.
+function openGoalSheet(card, id, {redraw, remove}) {
+  const find = () => ctx.plan().goals.find(x => x.id === id);
+  const g0 = find();
+  if (!g0) return;
+  openPanel(card, {
+    nested: true,
+    tone: 'goal',
+    title: '',
+    style: goalColor(g0) ? `--goal:${goalColor(g0)}` : '',
+    build(body, api) {
+      body.classList.add('goal-sheet');
+      body.innerHTML = `
+        <div class="gs-name"><button type="button" class="goal-chip gs-chip" data-act="style" aria-expanded="false" aria-controls="gsStyle" aria-label="Icon and color"></button><input class="gs-name-input" data-field="name" maxlength="80" enterkeyhint="done" placeholder="Name your goal" aria-label="Goal name" value="${esc(g0.name)}"></div>
+        <div class="gs-style" id="gsStyle" hidden>
+          <div class="goal-icons gs-icons" role="radiogroup" aria-label="Goal icon">${GOAL_ICONS.map(([iconId, label]) => `<button type="button" class="goal-icon-option" role="radio" data-goal-icon="${iconId}" aria-checked="false" aria-label="${label}" title="${label}">${icon(iconId)}</button>`).join('')}</div>
+          <div class="goal-colors gs-colors" role="radiogroup" aria-label="Goal color"><button type="button" class="goal-color-option is-none" role="radio" data-goal-color="" aria-checked="false" aria-label="No color" title="No color"></button>${GOAL_COLORS.map(([colorId, label, hex]) => `<button type="button" class="goal-color-option" role="radio" data-goal-color="${colorId}" aria-checked="false" aria-label="${label}" title="${label}" style="--swatch:${hex}"></button>`).join('')}</div>
+        </div>
+        <div class="gs-hero">
+          <div><span class="gs-label">Ready in</span><b class="gs-when"></b><span class="gs-date"></span></div>
+          <div class="gs-rate"><span class="gs-label">Each month</span><b class="gs-monthly"></b></div>
+        </div>
+        <div><div class="goal-progress gs-progress"><span></span></div><p class="fine gs-progress-label"></p></div>
+        <div class="gs-amounts">
+          <label class="gs-field"><span>Target</span><span class="gs-money">$<input data-num data-field="target" type="text" inputmode="decimal" enterkeyhint="done" value="${g0.target}"></span></label>
+          <label class="gs-field"><span>Saved so far</span><span class="gs-money">$<input data-num data-field="saved" type="text" inputmode="decimal" enterkeyhint="done" value="${g0.saved}"></span></label>
+        </div>
+        <div class="segmented gs-pace" aria-label="Savings pace"><span class="pace-lens" aria-hidden="true"></span>${['slow', 'medium', 'fast', 'custom'].map(p => `<button type="button" data-pace="${p}" class="${g0.pace === p ? 'selected' : ''}" aria-pressed="${g0.pace === p}">${p[0].toUpperCase() + p.slice(1)}</button>`).join('')}</div>
+        <div class="gs-pace-detail"></div>
+        <div class="button-row gs-actions"><button type="button" class="button danger" data-act="delete" aria-label="Delete goal">${icon('trash')}</button><button type="button" class="button primary" data-act="done">Done</button></div>`;
+      const seg = body.querySelector('.gs-pace'), detail = body.querySelector('.gs-pace-detail');
+
+      function paint() {
+        const g = find();
+        if (!g) return;
+        const computed = calculate(ctx.plan()).goals.find(x => x.id === id), t = timing(computed);
+        const hex = goalColor(g);
+        if (hex) api.panel.style.setProperty('--goal', hex); else api.panel.style.removeProperty('--goal');
+        const chip = body.querySelector('.gs-chip');
+        chip.classList.toggle('has-color', !!hex);
+        chip.innerHTML = icon(goalIcon(g)) + `<span class="gs-chip-badge" aria-hidden="true">${icon('edit')}</span>`;
+        body.querySelector('.gs-when').textContent = t.months;
+        body.querySelector('.gs-date').textContent = t.date;
+        springText(`goal-${id}`, body.querySelector('.gs-monthly'), computed.monthly, money);
+        const pct = g.target > 0 ? Math.min(100, g.saved / g.target * 100) : 100;
+        body.querySelector('.gs-progress span').style.width = pct + '%';
+        body.querySelector('.gs-progress-label').textContent = `${money(g.saved)} of ${money(g.target)} saved · ${Math.round(pct)}%`;
+        body.querySelectorAll('[data-goal-icon]').forEach(x => x.setAttribute('aria-checked', String(x.dataset.goalIcon === goalIcon(g))));
+        body.querySelectorAll('[data-goal-color]').forEach(x => x.setAttribute('aria-checked', String(x.dataset.goalColor === (g.color || ''))));
+      }
+      function paintDetail() {
+        const g = find();
+        detail.hidden = g.pace !== 'custom';
+        detail.innerHTML = g.pace === 'custom'
+          ? `<label class="gs-field gs-inline"><span>Set aside each month</span><span class="gs-money">$<input data-num data-field="perMonth" type="text" inputmode="decimal" enterkeyhint="done" value="${g.perMonth ?? 0}" aria-label="Amount to set aside each month"></span></label>`
+          : '';
+      }
+      function changed() { ctx.commit(); redraw(); paint(); }
+
+      body.addEventListener('input', e => {
+        const g = find(), field = e.target.dataset.field;
+        if (!g || !field) return;
+        if (field === 'name') { g.name = e.target.value; ctx.commit(); redraw(); paint(); return; }
+        if (e.target.value === '') return;
+        const n = numeric(e.target);
+        if (field === 'target') g.target = Math.min(1e7, Math.max(g.saved, n));
+        else if (field === 'saved') g.saved = Math.min(g.target, n);
+        else if (field === 'perMonth') g.perMonth = Math.min(1e6, n);
+        changed();
+      });
+      body.addEventListener('change', e => {
+        const g = find(), field = e.target.dataset.field;
+        if (!g || !field || field === 'name') return;
+        const n = numeric(e.target);
+        if (field === 'target') g.target = Math.min(1e7, Math.max(g.saved, n));
+        else if (field === 'saved') g.saved = Math.min(g.target, n);
+        else if (field === 'perMonth') g.perMonth = Math.min(1e6, n);
+        e.target.value = g[field];
+        changed();
+      });
+      body.addEventListener('click', e => {
+        const b = e.target.closest('button');
+        const g = find();
+        if (!b || !g) return;
+        if (b.dataset.pace) {
+          if (b.dataset.pace === 'custom' && g.perMonth === undefined) g.perMonth = Math.round(calculate(ctx.plan()).goals.find(x => x.id === id).monthly);
+          g.pace = b.dataset.pace;
+          seg.querySelectorAll('[data-pace]').forEach(x => { x.classList.toggle('selected', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+          movePill(seg);
+          paintDetail();
+          changed();
+          if (g.pace === 'custom') detail.querySelector('input')?.focus();
+        } else if (b.dataset.goalIcon) { g.icon = b.dataset.goalIcon; changed(); }
+        else if (b.dataset.goalColor !== undefined) { if (b.dataset.goalColor) g.color = b.dataset.goalColor; else delete g.color; changed(); }
+        else if (b.dataset.act === 'style') {
+          const section = body.querySelector('#gsStyle'), open = section.hidden;
+          section.hidden = !open;
+          b.setAttribute('aria-expanded', String(open));
+          if (open && !reduceMotion()) section.animate([{opacity: 0, transform: 'translateY(-6px)'}, {opacity: 1, transform: 'none'}], {duration: 240, easing: 'cubic-bezier(.2,.8,.2,1)'});
+        }
+        else if (b.dataset.act === 'done') api.close();
+        else if (b.dataset.act === 'delete') api.close().then(() => remove(id));
+      });
+      paintDetail();
+      paint();
+      requestAnimationFrame(() => movePill(seg));
+    },
+    // An unnamed goal keeps a readable name.
+    onClose() { const g = find(); if (g && !g.name.trim()) { g.name = 'New goal'; ctx.commit(); redraw(); } },
   });
 }
 
@@ -403,35 +466,49 @@ function openBreakdown(origin) {
   });
 }
 
-function openLock(origin, goTo) {
-  const plan = ctx.plan(), c = calculate(plan), s = ctx.state, synced = inSync(plan);
-  const replacing = s.budget && !lockedHere(plan);
-  openPanel(origin, {
-    tone: synced ? '' : 'accent',
-    title: synced ? 'Your budget' : lockedHere(plan) ? 'Update budget' : 'Lock in plan',
-    build(body, api) {
-      body.innerHTML = `<div><p class="group-title">To spend each month</p><div class="big-number">${money(c.left)}</div></div>
-        <div class="group rows">
-          <div><span>Take-home</span><b>${cash(c.net)}</b></div>
-          <div class="minus"><span>Bills (${plan.expenses.length})</span><b>−${cash(c.expenses)}</b></div>
-          ${plan.car ? `<div class="minus"><span>Car</span><b>−${cash(plan.car)}</b></div>` : ''}
-          ${c.savings ? `<div class="minus"><span>Savings goals</span><b>−${cash(c.savings)}</b></div>` : ''}
-        </div>
-        <p class="lede">${synced ? 'This plan is your budget. Purchases you log on Today come out of this amount.' : `Bills, car and savings are set aside up front. Purchases you log come out of ${money(c.left)} each month.`}</p>
-        ${replacing ? `<p class="fine">This replaces your current budget from “${esc(s.budget.planName)}”. Purchases already logged this month stay.</p>` : ''}
-        ${lockedHere(plan) && !synced ? `<p class="fine">This month's amount changes to ${money(c.left)}. Purchases already logged stay.</p>` : ''}
-        ${c.left <= 0 ? '<p class="lede" style="color:var(--bad)">This plan leaves nothing to spend. Adjust it before locking in.</p>' : ''}
-        ${synced ? `<button type="button" class="button quiet" id="goToday">Go to Today</button>` : c.left > 0 ? `<div id="lockSlider"></div>` : ''}`;
-      body.querySelector('#goToday')?.addEventListener('click', () => api.close().then(() => goTo('today')));
-      const slider = body.querySelector('#lockSlider');
-      if (slider) slideToConfirm(slider, () => {
-        const first = !s.budget;
-        lockIn(s, plan, new Date());
-        ctx.commit({render: false});
-        persist();
-        api.close().then(() => { goTo('today'); toast(first ? 'Budget locked in. Log your first purchase.' : 'Budget updated'); });
-      }, {label: lockedHere(plan) ? 'slide to update' : 'slide to lock in', done: lockedHere(plan) ? 'Updated' : 'Locked in', icon: icon('arrow'), doneIcon: icon('lock')});
-    },
+// The Lock tile is the control: slide right to lock this plan in as the budget,
+// slide back left to unlock. Nothing navigates away from Plans.
+function lockTile(plan, c, synced, locked) {
+  const b = ctx.state.budget, since = b && new Date(b.lockedAt).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+  let head, note;
+  if (locked) {
+    head = `<span class="tile-label">Locked in</span><span class="status" data-pace="${synced ? 'track' : 'hot'}">${synced ? `Since ${since}` : 'Plan changed'}</span>`;
+    note = synced ? `Tracking ${money(b.spendable)} a month. Log purchases from Today.` : `Your budget still uses ${money(b.spendable)} a month. This plan now leaves ${money(c.left)}.`;
+  } else {
+    head = `<span class="tile-label">Lock in this plan</span>`;
+    note = c.left > 0 ? `Track ${money(c.left)} to spend each month.${b ? ` Replaces “${esc(b.planName)}”; purchases stay.` : ''}` : 'This plan leaves nothing to spend yet. Add income first.';
+  }
+  return `<div class="tile span-2 lock-tile ${locked ? 'is-locked' : ''}" data-tile="p-lock">
+      <div class="tile-head"><span class="tile-icon">${icon('lock')}</span>${head}</div>
+      <p class="tile-sub lock-note">${note}</p>
+      ${locked || c.left > 0 ? '<div class="lock-slider" id="lockSlider"></div>' : ''}
+      ${locked && !synced && c.left > 0 ? `<button type="button" class="button primary lock-update" id="updateBudget">Update budget to ${money(c.left)}</button>` : ''}
+    </div>`;
+}
+
+function wireLock(plan, synced, locked) {
+  const s = ctx.state, slider = $('lockSlider');
+  if (slider) slideToConfirm(slider, () => {
+    const hadFocus = document.activeElement === slider;
+    queueMicrotask(() => { if (hadFocus) $('lockSlider')?.focus({preventScroll: true}); });
+    if (locked) {
+      const previous = unlock(s);
+      ctx.commit();
+      toast('Unlocked. Your purchases are kept.', () => { s.budget = previous; ctx.commit(); });
+    } else {
+      const first = !s.budget;
+      lockIn(s, plan, new Date());
+      ctx.commit();
+      persist();
+      toast(first ? 'Locked in. Log purchases from Today.' : 'Locked in as your budget');
+    }
+  }, locked
+    ? {label: 'slide to unlock', done: 'Unlocked', icon: icon('lock'), doneIcon: icon('arrow'), reverse: true}
+    : {label: 'slide to lock in', done: 'Locked in', icon: icon('arrow'), doneIcon: icon('lock')});
+  $('updateBudget')?.addEventListener('click', () => {
+    lockIn(s, plan, new Date());
+    ctx.commit();
+    toast(`Budget updated to ${money(s.budget.spendable)} a month`);
   });
 }
 
@@ -442,7 +519,7 @@ export function setupPlans(goTo, showPlans) {
     const key = tile.dataset.tile;
     ({
       'p-hero': openBreakdown, 'p-income': openIncome, 'p-net': openNet, 'p-rent': openRent, 'p-car': openCar,
-      'p-bills': openBills, 'p-goals': openGoals, 'p-lock': o => openLock(o, goTo),
+      'p-bills': openBills, 'p-goals': openGoals,
     })[key]?.(tile);
   });
   $('planName').addEventListener('input', e => { ctx.plan().name = e.target.value; ctx.commit({render: false}); });

@@ -1,10 +1,11 @@
-// First run: a two-step onboarding that asks for a name.
+// First run: the logo, then a short setup walkthrough (setup.js).
 // Every launch after that: a short welcome with the logo and a greeting.
-import {ctx, money} from './context.js?v=22';
-import {samples, reduceMotion} from './motion.js?v=22';
-import {openMonthOf, totals, monthName} from './ledger.js?v=22';
-import {pickGreeting} from './greeting.js?v=22';
-import {flush} from './store.js?v=22';
+import {ctx, money} from './context.js?v=32';
+import {samples, reduceMotion} from './motion.js?v=32';
+import {openMonthOf, totals, monthName, lockIn} from './ledger.js?v=32';
+import {startSetup} from './setup.js?v=32';
+import {pickGreeting} from './greeting.js?v=32';
+import {flush, persist} from './store.js?v=32';
 
 const curve = samples(220, 22);
 const intro = () => document.getElementById('intro');
@@ -136,29 +137,28 @@ export function showWelcome(text = null) {
 
 function onboarding() {
   const step1 = swap(`${logo}<h1>Quasar</h1><p>See what you'll have each month, then watch it as you spend.</p><button type="button" class="button primary intro-button">Get started</button>`);
-  step1.querySelector('button').addEventListener('click', askName, {once: true});
+  step1.querySelector('button').addEventListener('click', () => {
+    startSetup(intro(), {
+      back: onboarding,
+      finish: async ({locked}) => {
+        const s = ctx.state;
+        if (locked) lockIn(s, ctx.plan(), new Date());
+        s.prefs.onboarded = true;
+        ctx.commit({render: false});
+        await flush();
+        if (locked) persist();
+        navigate?.(locked ? 'today' : 'plans', {animate: false});
+        const name = s.prefs.name;
+        showWelcome(name ? `You're all set, ${name}` : "You're all set");
+      },
+    });
+  }, {once: true});
 }
 
-function askName() {
-  const step = swap(`<h1>What should we call you?</h1><p>Just a first name. It stays on this device.</p><input class="intro-name" type="text" maxlength="40" autocomplete="given-name" autocapitalize="words" enterkeyhint="go" placeholder="Name" aria-label="Your name"><button type="button" class="button primary intro-button" disabled>Continue</button>`);
-  const input = step.querySelector('input'), button = step.querySelector('button');
-  input.focus();
-  input.addEventListener('input', () => { button.disabled = !input.value.trim(); });
-  const finish = async () => {
-    const name = input.value.trim().slice(0, 40);
-    if (!name) return;
-    ctx.state.prefs.name = name;
-    ctx.commit({render: false});
-    await flush();
-    input.blur();
-    showWelcome(`Nice to meet you, ${name}`);
-  };
-  button.addEventListener('click', finish);
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); finish(); } });
-}
-
-export function runIntro() {
-  if (ctx.state.prefs.name) showWelcome();
+let navigate = null;
+export function runIntro(goTo) {
+  navigate = goTo;
+  if (ctx.state.prefs.onboarded) showWelcome();
   else onboarding();
 }
 
@@ -166,5 +166,5 @@ export function runIntro() {
 let hiddenAt = 0;
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') hiddenAt = Date.now();
-  else if (hiddenAt && Date.now() - hiddenAt > 30 * 60 * 1000 && ctx.state?.prefs.name && !intro()) showWelcome();
+  else if (hiddenAt && Date.now() - hiddenAt > 30 * 60 * 1000 && ctx.state?.prefs.onboarded && !intro()) showWelcome();
 });

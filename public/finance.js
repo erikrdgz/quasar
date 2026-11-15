@@ -1,5 +1,27 @@
 export const uid=()=>globalThis.crypto.randomUUID();
-export function blank(){return {id:uid(),name:'My plan',salary:130000,incomeMode:'salary',takeHome:0,other:0,famli:true,car:0,goals:[],expenses:[['Rent',375],['Food',400],['Phone',200],['Xcel',100],['Legal',260]].map(([name,amount])=>({id:uid(),name,amount}))};}
+// New plans start empty; onboarding or the user fills them in.
+export function blank(){return {id:uid(),name:'My plan',salary:0,incomeMode:'salary',takeHome:0,other:0,famli:true,car:0,goals:[],expenses:[]};}
+// Goal icons (Font Awesome Free). A goal without a chosen icon shows one guessed
+// from its name, so lists stay scannable with no extra taps.
+export const GOAL_ICONS=[
+ ['piggy-bank','Savings'],['umbrella','Emergency'],['plane','Travel'],['house','Home'],['car','Car'],
+ ['graduation-cap','Education'],['ring','Wedding'],['gift','Gifts'],['laptop','Tech'],['paw','Pet']
+];
+const ICON_WORDS=[
+ ['umbrella',/emergenc|rainy|cushion|safety net/],['plane',/trip|travel|vacation|flight|holiday in|getaway|japan|europe|mexico/],
+ ['house',/house|home|down ?payment|apartment|condo|deposit|move|moving/],['car',/\bcar\b|truck|vehicle|tesla|bike|motorcycle/],
+ ['graduation-cap',/school|college|tuition|class|course|degree|education|student/],['ring',/wedding|engage|ring|honeymoon/],
+ ['gift',/gift|christmas|birthday|present|holiday/],['laptop',/laptop|computer|mac|phone|iphone|tech|camera|tv|console|gaming/],
+ ['paw',/\bpet\b|dog|cat|puppy|kitten|vet/]
+];
+// Optional goal colors. Muted-bright so they read on black, and none is the
+// action blue, which stays reserved for buttons.
+export const GOAL_COLORS=[
+ ['green','Green','#4fd18b'],['teal','Teal','#5fd2cc'],['sky','Sky','#7cc4ff'],['purple','Purple','#c39cff'],
+ ['pink','Pink','#f282b4'],['red','Red','#ff7a6b'],['orange','Orange','#f2a65e'],['yellow','Yellow','#f5cf5a']
+];
+export const goalColor=goal=>GOAL_COLORS.find(([id])=>id===goal.color)?.[2]||null;
+export function goalIcon(goal){if(GOAL_ICONS.some(([id])=>id===goal.icon))return goal.icon;const name=String(goal.name||'').toLowerCase();return ICON_WORDS.find(([,re])=>re.test(name))?.[0]||'piggy-bank';}
 export function taxes(salary,famli=true){
  const income=Math.max(0,salary), taxable=Math.max(0,income-16100);
  const brackets=[[12400,.1],[50400,.12],[105700,.22],[201775,.24],[256225,.32],[640600,.35],[Infinity,.37]];
@@ -12,9 +34,14 @@ export function taxes(salary,famli=true){
 export const usesTakeHome=p=>p.incomeMode==='takehome';
 export function calculate(p){const tax=usesTakeHome(p)?{federal:0,state:0,ss:0,medicare:0,leave:0,total:0}:taxes(p.salary,p.famli),net=(usesTakeHome(p)?p.takeHome:(p.salary-tax.total)/12)-p.other,expenses=p.expenses.reduce((s,e)=>s+e.amount,0),available=net-expenses-p.car;
  const active=p.goals.filter(g=>g.target>g.saved),weights={slow:1,medium:2,fast:4};
+ // Custom goals set aside a fixed amount first (never more than is available or
+ // still needed); paced goals then share a slice of whatever remains.
+ let room=Math.max(0,available);const fixed=new Map();
+ for(const g of active.filter(g=>g.pace==='custom')){const take=Math.min(g.target-g.saved,g.perMonth||0,room);fixed.set(g,take);room-=take;}
+ const paced=active.filter(g=>g.pace!=='custom');
  // A shared savings pool prevents multiple goals from allocating the same money.
- const weight=active.reduce((s,g)=>s+weights[g.pace],0),fraction=active.length?Math.max(...active.map(g=>({slow:.1,medium:.25,fast:.4})[g.pace])):0,pool=Math.max(0,available)*fraction;
- const goals=p.goals.map(g=>{const remaining=Math.max(0,g.target-g.saved),monthly=remaining&&weight?Math.min(remaining,pool*weights[g.pace]/weight):0;return {...g,remaining,monthly,months:remaining===0?0:monthly>0?Math.ceil(remaining/monthly):null};});
+ const weight=paced.reduce((s,g)=>s+weights[g.pace],0),fraction=paced.length?Math.max(...paced.map(g=>({slow:.1,medium:.25,fast:.4})[g.pace])):0,pool=room*fraction;
+ const goals=p.goals.map(g=>{const remaining=Math.max(0,g.target-g.saved),monthly=!remaining?0:g.pace==='custom'?fixed.get(g)||0:weight?Math.min(remaining,pool*weights[g.pace]/weight):0;return {...g,remaining,monthly,months:remaining===0?0:monthly>0?Math.ceil(remaining/monthly):null};});
  const savings=goals.reduce((s,g)=>s+g.monthly,0);return {tax,net,expenses,available,savings,goals,left:available-savings};}
 export function validatePlan(p,keepIds=false){
  const number=(n,max=1e7)=>typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<=max;
@@ -22,9 +49,11 @@ export function validatePlan(p,keepIds=false){
  const incomeMode=p.incomeMode??'salary',takeHome=p.takeHome??0;
  if(!['salary','takehome'].includes(incomeMode)||!number(takeHome,1e6))throw Error('Invalid take-home pay.');
  for(const e of p.expenses)if(typeof e.name!=='string'||e.name.length>80||!number(e.amount))throw Error('Invalid expense.');
- for(const g of p.goals)if(typeof g.name!=='string'||g.name.length>80||!number(g.target)||!number(g.saved)||!['slow','medium','fast'].includes(g.pace))throw Error('Invalid savings goal.');
+ for(const g of p.goals)if(typeof g.name!=='string'||g.name.length>80||!number(g.target)||!number(g.saved)||!['slow','medium','fast','custom'].includes(g.pace)||(g.perMonth!==undefined&&!number(g.perMonth,1e6)))throw Error('Invalid savings goal.');
+ // Unknown icon ids are dropped rather than rejected, so older or edited backups still load.
+ const goals=p.goals.map(g=>{const {icon,color,...rest}=g;if(GOAL_ICONS.some(([id])=>id===icon))rest.icon=icon;if(GOAL_COLORS.some(([id])=>id===color))rest.color=color;return rest;});
  const id=x=>keepIds&&typeof x.id==='string'?x.id:uid();
- return {...p,incomeMode,takeHome,id:id(p),expenses:p.expenses.map(e=>({...e,id:id(e)})),goals:p.goals.map(g=>({...g,id:id(g)}))};
+ return {...p,incomeMode,takeHome,id:id(p),expenses:p.expenses.map(e=>({...e,id:id(e)})),goals:goals.map(g=>({...g,id:id(g)}))};
 }
 // Caps use cents and round down so input can never cross the available balance.
 export function spendingLimit(p,id){const c=calculate(p);const own=id==='car'?p.car:(p.expenses.find(e=>e.id===id)?.amount||0);return Math.max(0,Math.floor((c.net-c.expenses-p.car+own+1e-8)*100)/100);}
